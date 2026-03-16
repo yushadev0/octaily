@@ -76,3 +76,8 @@ The frontend natively renders custom grids and input mechanisms for 8 daily logi
 ---
 
 *For backend service setup, please refer to the [Octaily API Service Repository](https://github.com/yushadev0/octaily-service).*
+
+---
+
+## To use the project
+Here is the [link](https://hasup.net/octaily)
