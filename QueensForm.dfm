@@ -37,45 +37,7 @@ object QUEENS_FORM: TQUEENS_FORM
       'window.queensEls = function(selector) { var vp = window.getVisib' +
       'leViewport(); return vp ? vp.querySelectorAll(selector) : []; };'
     ''
-    'window.injectOctailyStyles = function() {'
-    '    if (!document.getElementById("octailyGlobalStyle")) {'
-    '        var style = document.createElement("style");'
-    '        style.id = "octailyGlobalStyle";'
-    '        style.innerHTML = '
-    
-      '            ".swal2-container { z-index: 2147483647 !important; ' +
-      '} " +'
-    
-      '            ".oct-popup { background: #121213 !important; border' +
-      ': 1px solid #3a3a3c !important; color: #fff !important; border-r' +
-      'adius: 12px !important; } " +'
-    
-      '            ".oct-title { color: #fff !important; font-weight: 8' +
-      '00 !important; font-size: 1.4rem !important; margin-top: 10px !i' +
-      'mportant; letter-spacing: 1px !important; } " +'
-    
-      '            ".oct-content { color: #818384 !important; font-size' +
-      ': 1.1rem !important; margin-top: 15px !important; line-height: 1' +
-      '.6 !important; } " +'
-    
-      '            ".oct-confirm { background: #538d4e !important; colo' +
-      'r: #fff !important; font-weight: bold !important; padding: 12px ' +
-      '30px !important; border-radius: 6px !important; border: none !im' +
-      'portant; margin: 15px !important; cursor: pointer; font-family: ' +
-      'sans-serif; font-size: 1.1rem !important; } " +'
-    
-      '            ".oct-cancel { background: #3a3a3c !important; color' +
-      ': #fff !important; padding: 12px 25px !important; border-radius:' +
-      ' 6px !important; border: none !important; margin: 10px !importan' +
-      't; cursor: pointer; font-family: sans-serif; } " +'
-    
-      '            ".oct-icon { border: none !important; color: #b59f3b' +
-      ' !important; font-size: 2.5rem !important; display: flex !import' +
-      'ant; align-items: center !important; justify-content: center !im' +
-      'portant; margin: 10px auto !important; }";'
-    '        document.head.appendChild(style);'
-    '    }'
-    '};'
+    'window.injectOctailyStyles = function() {}; '
     ''
     'window.saveQueensState = function() {'
     '    if (!window.getVisibleViewport()) return; '
@@ -210,7 +172,6 @@ object QUEENS_FORM: TQUEENS_FORM
     '};'
     ''
     'window.initQueensBoard = function() {'
-    '    window.injectOctailyStyles();'
     '    var boardEl = window.queensEl('#39'#queensBoard'#39');'
     
       '    if (!boardEl) { setTimeout(window.initQueensBoard, 100); ret' +
@@ -433,22 +394,6 @@ object QUEENS_FORM: TQUEENS_FORM
       '    } else if (emptyCount === 0 && !isWin && !isLoad && !window.' +
       'isQueensCompleted) {'
     '        window.queensValidationTimer = setTimeout(function() {'
-    
-      '            var mySwal = (typeof Swal !== '#39'undefined'#39') ? Swal : ' +
-      '(window.parent && window.parent.Swal ? window.parent.Swal : null' +
-      ');'
-    '            if (mySwal) {'
-    '                mySwal.fire({'
-    
-      '                    target: window.getVisibleViewport() || docum' +
-      'ent.body,'
-    
-      '                    title: '#39'HATA!'#39', text: '#39'Bu pek dogru gorunmuy' +
-      'or...'#39', icon: '#39'warning'#39', toast: true, position: '#39'top'#39', showConfi' +
-      'rmButton: false, timer: 2000, background: '#39'#1a1a1b'#39', color: '#39'#ff' +
-      'ffff'#39', customClass: { popup: '#39'oct-popup'#39' }'
-    '                });'
-    '            }'
     '            var boardEl = window.queensEl('#39'#queensBoard'#39');'
     
       '            if (boardEl) { boardEl.classList.remove('#39'shake'#39'); vo' +
@@ -464,7 +409,9 @@ object QUEENS_FORM: TQUEENS_FORM
       'return '#39'B'#39'; return '#39'C'#39';'
     '};'
     ''
-    'window.showQueensGameOver = function(isReplay) {'
+    
+      'window.showQueensGameOver = function(isReplay, savedMoves, saved' +
+      'Time) {'
     '    window.isQueensCompleted = true; '
     
       '    if (window.queensTimerInterval) clearInterval(window.queensT' +
@@ -474,11 +421,13 @@ object QUEENS_FORM: TQUEENS_FORM
       'ValidationTimer);'
     '    '
     
-      '    var time = window.queensElapsedTime, moves = window.queensMo' +
-      'ves;'
+      '    var time = (isReplay && savedTime !== undefined) ? savedTime' +
+      ' : window.queensElapsedTime;'
     
-      '    var grade = isReplay ? window.queensGrade : window.calculate' +
-      'QueensGrade(time);'
+      '    var moves = (isReplay && savedMoves !== undefined) ? savedMo' +
+      'ves : window.queensMoves;'
+    '    '
+    '    var grade = window.calculateQueensGrade(time);'
     '    '
     '    if (!isReplay) { '
     '        window.queensGrade = grade; '
@@ -495,10 +444,10 @@ object QUEENS_FORM: TQUEENS_FORM
     '        }'
     '    }'
     '    '
-    
-      '    var m = Math.floor(time / 60).toString().padStart(2, '#39'0'#39'), s' +
-      ' = (time % 60).toString().padStart(2, '#39'0'#39'), timeStr = m + '#39':'#39' + ' +
-      's;'
+    '    var m = Math.floor(time / 60).toString().padStart(2, '#39'0'#39');'
+    '    var s = (time % 60).toString().padStart(2, '#39'0'#39');'
+    '    var timeStr = m + '#39':'#39' + s;'
+    ''
     '    var gradeColor = "#b59f3b"; '
     
       '    if (grade === '#39'S+'#39' || grade === '#39'S'#39') gradeColor = "#ffd700";' +
@@ -507,63 +456,75 @@ object QUEENS_FORM: TQUEENS_FORM
     '    if (grade === '#39'C'#39') gradeColor = "#e74c3c";'
     '    '
     '    var modalTitle = isReplay ? '#39'G'#220'N'#220'N '#214'ZET'#304#39' : '#39'TEBR'#304'KLER!'#39';'
-    
-      '    var subText = isReplay ? '#39'<div style="color:#818384; font-si' +
-      'ze:0.95rem; margin-bottom:20px;">Bu haritay'#305' '#231'oktan fethettin!</' +
-      'div>'#39' : '#39#39';'
-    '    var modalIcon = isReplay ? '#39'info'#39' : '#39'success'#39';'
     '    '
-    '    var htmlContent = subText +'
-    
-      '        '#39'<div style="display:flex; justify-content:space-around;' +
-      ' align-items:center; margin-top:10px;">'#39' +'
-    '            '#39'<div style="text-align:center;">'#39' +'
-    
-      '                '#39'<div style="font-size:3rem; font-weight:900; co' +
-      'lor:'#39' + gradeColor + '#39';">'#39' + grade + '#39'</div>'#39' +'
-    
-      '                '#39'<div style="font-size:0.9rem; color:#818384; le' +
-      'tter-spacing:1px;">DERECE</div>'#39' +'
-    '            '#39'</div>'#39' +'
-    '            '#39'<div style="text-align:center;">'#39' +'
-    
-      '                '#39'<div style="font-size:2rem; font-weight:bold; c' +
-      'olor:#fff; line-height:3rem;">'#39' + timeStr + '#39'</div>'#39' +'
-    
-      '                '#39'<div style="font-size:0.9rem; color:#818384; le' +
-      'tter-spacing:1px;">S'#220'RE</div>'#39' +'
-    '            '#39'</div>'#39' +'
-    '            '#39'<div style="text-align:center;">'#39' +'
-    
-      '                '#39'<div style="font-size:2rem; font-weight:bold; c' +
-      'olor:#fff; line-height:3rem;">'#39' + moves + '#39'</div>'#39' +'
-    
-      '                '#39'<div style="font-size:0.9rem; color:#818384; le' +
-      'tter-spacing:1px;">HAMLE</div>'#39' +'
-    '            '#39'</div>'#39' +'
-    '        '#39'</div>'#39';'
-    '        '
-    
-      '    var mySwal = (typeof Swal !== '#39'undefined'#39') ? Swal : (window.' +
-      'parent && window.parent.Swal ? window.parent.Swal : null);'
-    '    if (mySwal) {'
-    '        mySwal.fire({'
-    
-      '            target: window.getVisibleViewport() || document.body' +
-      ','
-    
-      '            title: modalTitle, html: htmlContent, icon: modalIco' +
-      'n, confirmButtonText: '#39#199'IK'#39', background: '#39'#1a1a1b'#39', color: '#39'#fff' +
-      'fff'#39','
-    
-      '            customClass: { popup: '#39'oct-popup'#39', title: '#39'oct-title' +
-      #39', confirmButton: '#39'oct-confirm'#39', icon: '#39'oct-icon'#39' },'
-    
-      '            didOpen: function() { var container = document.query' +
-      'Selector('#39'.swal2-container'#39'); if (container) container.style.zIn' +
-      'dex = "2147483647"; }'
-    '        }); '
+    '    document.getElementById('#39'crmTitle'#39').innerText = modalTitle;'
+    '    document.getElementById('#39'crmTitle'#39').style.color = '#39'#fff'#39';'
+    '    '
+    '    var subTextEl = document.getElementById('#39'crmSubText'#39');'
+    '    if (isReplay) {'
+    '        subTextEl.innerHTML = '#39'Bu haritay'#305' '#231'oktan fethettin!'#39';'
+    '        subTextEl.style.display = '#39'block'#39';'
+    '    } else {'
+    '        subTextEl.style.display = '#39'none'#39';'
     '    }'
+    ''
+    '    var bigGrade = document.getElementById('#39'crmBigGrade'#39');'
+    '    bigGrade.innerText = grade;'
+    '    bigGrade.style.color = gradeColor;'
+    '    bigGrade.style.textShadow = '#39'0 0 20px '#39' + gradeColor + '#39'60'#39';'
+    '    '
+    '    var divider = document.getElementById('#39'crmDivider'#39');'
+    '    if (divider) {'
+    '        divider.style.backgroundColor = gradeColor;'
+    
+      '        divider.style.boxShadow = '#39'0 0 12px '#39' + gradeColor + '#39'80' +
+      #39';'
+    '    }'
+    ''
+    '    document.getElementById('#39'crmTime'#39').innerText = timeStr;'
+    
+      '    document.getElementById('#39'crmTries'#39').innerText = moves.toStri' +
+      'ng();'
+    ''
+    
+      '    document.getElementById('#39'crmAvgTime'#39').innerHTML = '#39'<i class=' +
+      '"fa-solid fa-spinner fa-spin"></i>'#39';'
+    
+      '    document.getElementById('#39'crmPercentile'#39').innerHTML = '#39'<i cla' +
+      'ss="fa-solid fa-spinner fa-spin"></i>'#39';'
+    ''
+    
+      '    document.getElementById('#39'customResultModal'#39').classList.add('#39 +
+      'active'#39');'
+    ''
+    '    setTimeout(function() {'
+    '        if (typeof ajaxRequest !== '#39'undefined'#39') {'
+    
+      '            ajaxRequest(QUEENS_FORM.QueensHTML, '#39'GetPanelStats'#39',' +
+      ' ['#39'game_type=queens'#39']);'
+    '        }'
+    '    }, isReplay ? 0 : 400);'
+    '};'
+    ''
+    'window.updatePanelStats = function(avgTimeSec, percentile) {'
+    
+      '    var m = Math.floor(avgTimeSec / 60).toString().padStart(2, '#39 +
+      '0'#39');'
+    '    var s = (avgTimeSec % 60).toString().padStart(2, '#39'0'#39');'
+    
+      '    document.getElementById('#39'crmAvgTime'#39').innerText = (avgTimeSe' +
+      'c > 0) ? (m + '#39':'#39' + s) : '#39'--:--'#39';'
+    
+      '    document.getElementById('#39'crmPercentile'#39').innerText = '#39'%'#39' + p' +
+      'ercentile;'
+    '};'
+    ''
+    'window.closeResultModal = function() {'
+    '    var modal = document.getElementById('#39'customResultModal'#39');'
+    '    if(modal) modal.classList.remove('#39'active'#39');'
+    
+      '    if (typeof ajaxRequest !== '#39'undefined'#39') ajaxRequest(QUEENS_F' +
+      'ORM.QueensHTML, '#39'closePage'#39');'
     '};')
   TextHeight = 15
   object QueensHTML: TUniHTMLFrame
@@ -574,9 +535,6 @@ object QUEENS_FORM: TQUEENS_FORM
     Hint = ''
     HTML.Strings = (
       '<style>'
-      '    /* ========================================='
-      '       S'#304'STEM RESET & SCROLL K'#304'L'#304'D'#304' (iOS & Android)'
-      '       ========================================= */'
       '    html, body {'
       '        margin: 0 !important;'
       '        padding: 0 !important;'
@@ -592,14 +550,9 @@ object QUEENS_FORM: TQUEENS_FORM
       '        appearance: none !important;'
       '    }'
       ''
-      '    /* ========================================='
-      '       TAM EKRAN OYUN KAPSAYICI (Karanl'#305'k Tema)'
-      '       ========================================= */'
       '    .queens-viewport {'
       '        position: fixed;'
-      
-        '        top: 0; left: 0; right: 0; bottom: 0; /* iOS iframe soru' +
-        'nlar'#305'n'#305' '#231#246'zer */'
+      '        top: 0; left: 0; right: 0; bottom: 0;'
       '        width: 100vw; height: 100vh; height: 100dvh;'
       '        background-color: #121213 !important;'
       '        display: flex;'
@@ -618,15 +571,10 @@ object QUEENS_FORM: TQUEENS_FORM
       '        touch-action: none;'
       '        -webkit-border-radius: 0 !important;'
       '        border-radius: 0 !important;'
-      ''
-      '        /* iOS GR'#304' K'#214#350'E SIZINTISI '#304#199#304'N KES'#304'N '#199#214'Z'#220'MLER */'
       '        box-shadow: 0 0 0 100vmax #121213; '
       '        clip-path: inset(0); '
       '    }'
       ''
-      '    /* ========================================='
-      '       '#220'ST BA'#350'LIK VE KRONOMETRE'
-      '       ========================================= */'
       '    .queens-header {'
       '        width: 100%; max-width: 500px;'
       '        display: flex; justify-content: space-between;'
@@ -655,9 +603,6 @@ object QUEENS_FORM: TQUEENS_FORM
       '        -webkit-tap-highlight-color: transparent;'
       '    }'
       ''
-      '    /* ========================================='
-      '       OYUN ALANI (Esnek Grid Yap'#305's'#305')'
-      '       ========================================= */'
       '    .queens-board-container {'
       '        flex-grow: 1; '
       
@@ -682,9 +627,6 @@ object QUEENS_FORM: TQUEENS_FORM
       '        box-sizing: border-box;'
       '    }'
       ''
-      '    /* ========================================='
-      '       H'#220'CRELER VE DURUMLARI'
-      '       ========================================= */'
       '    .q-cell {'
       
         '        display: flex; justify-content: center; align-items: cen' +
@@ -695,13 +637,10 @@ object QUEENS_FORM: TQUEENS_FORM
       '        box-sizing: border-box;'
       '        border: 1px solid rgba(255, 255, 255, 0.1); '
       '        transition: transform 0.1s, background-color 0.3s;'
-      
-        '        -webkit-tap-highlight-color: transparent; /* Mobilde dok' +
-        'unma grili'#287'ini kald'#305'r'#305'r */'
+      '        -webkit-tap-highlight-color: transparent;'
       '    }'
       '    .q-cell:active { transform: scale(0.90); }'
       ''
-      '    /* '#304'KON ST'#304'LLER'#304' (Vezir ve '#199'arp'#305') */'
       '    .q-cell.queen {'
       '        color: #f1c40f; '
       '        text-shadow: 0 0 15px rgba(241, 196, 15, 0.6);'
@@ -714,23 +653,16 @@ object QUEENS_FORM: TQUEENS_FORM
       '        font-size: 1rem;'
       '    }'
       ''
-      '    /* HATA DURUMU */'
       '    .q-cell.error { background-color: #c0392b !important; }'
       
         '    .q-cell.error i { color: #fff; text-shadow: none; animation:' +
         ' shake 0.3s; }'
       ''
-      '    /* ========================================='
-      '       B'#214'LGE (REGION) KALIN '#199#304'ZG'#304'LER'#304
-      '       ========================================= */'
       '    .b-top { border-top: 3px solid #121213 !important; }'
       '    .b-right { border-right: 3px solid #121213 !important; }'
       '    .b-bottom { border-bottom: 3px solid #121213 !important; }'
       '    .b-left { border-left: 3px solid #121213 !important; }'
       ''
-      '    /* ========================================='
-      '       PASTEL RENK PALET'#304' (B'#246'lgeler '#304#231'in)'
-      '       ========================================= */'
       '    .q-color-0 { background-color: #4B6584; } '
       '    .q-color-1 { background-color: #6D214F; } '
       '    .q-color-2 { background-color: #218C74; } '
@@ -741,9 +673,6 @@ object QUEENS_FORM: TQUEENS_FORM
       '    .q-color-7 { background-color: #006266; } '
       '    .q-color-8 { background-color: #596275; } '
       ''
-      '    /* ========================================='
-      '       ALT KONTROL BUTONLARI'
-      '       ========================================= */'
       '    .queens-controls {'
       '        width: 100%; max-width: 400px;'
       '        display: flex; justify-content: space-between;'
@@ -768,6 +697,96 @@ object QUEENS_FORM: TQUEENS_FORM
       '    .q-btn.danger i { color: #e74c3c; }'
       '    .q-btn.undo i { color: #3498db; }'
       ''
+      '    /* ========================================='
+      '       CUSTOM SONU'#199' PANEL'#304' CSS'#39'LER'#304
+      '       ========================================= */'
+      
+        '    .oct-modal-overlay { position: fixed; top: 0; left: 0; width' +
+        ': 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-' +
+        'filter: blur(8px); display: flex; justify-content: center; align' +
+        '-items: center; z-index: 11000; opacity: 0; visibility: hidden; ' +
+        'transition: opacity 0.3s ease, visibility 0.3s ease; padding: 15' +
+        'px; box-sizing: border-box; }'
+      
+        '    .oct-modal-overlay.active { opacity: 1; visibility: visible;' +
+        ' }'
+      '    '
+      
+        '    .oct-modal-content { background: #161618; width: 100%; max-w' +
+        'idth: 350px; border-radius: 16px; border: 1px solid #333; displa' +
+        'y: flex; flex-direction: column; text-align: center; overflow: h' +
+        'idden; opacity: 0; max-height: 92vh; }'
+      
+        '    .oct-modal-overlay.active .oct-modal-content { animation: sw' +
+        'alPopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }'
+      ''
+      
+        '    .modal-header { padding: 18px 20px; background: #1a1a1c; dis' +
+        'play: flex; justify-content: center; align-items: center; border' +
+        '-bottom: 1px solid #2a2a2c; position: relative; flex-shrink: 0; ' +
+        '}'
+      
+        '    .modal-header h2 { margin: 0; font-size: 1.2rem; color: #fff' +
+        '; font-weight: 800; letter-spacing: 1.5px; text-transform: upper' +
+        'case; }'
+      '    '
+      
+        '    .modal-body { padding: 15px 20px; display: flex; flex-direct' +
+        'ion: column; align-items: center; overflow-y: auto; touch-action' +
+        ': pan-y; -webkit-overflow-scrolling: touch; overscroll-behavior:' +
+        ' contain; flex-grow: 1; }'
+      
+        '    .crm-subtext { color: #818384; font-size: 0.85rem; margin-bo' +
+        'ttom: 12px; display: none; }'
+      '    '
+      
+        '    .crm-grade-section { margin: 5px auto 10px auto; display: fl' +
+        'ex; flex-direction: column; align-items: center; width: 100%; fl' +
+        'ex-shrink: 0; opacity: 0; }'
+      
+        '    .oct-modal-overlay.active .crm-grade-section { animation: gr' +
+        'adeSectionIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s forward' +
+        's; }'
+      ''
+      
+        '    .crm-grade-label { font-size: 0.75rem; color: #818384; font-' +
+        'weight: bold; letter-spacing: 2px; margin-bottom: 2px; text-tran' +
+        'sform: uppercase; }'
+      
+        '    .crm-grade-value { font-size: 4.5rem; font-weight: 900; line' +
+        '-height: 1.1; position: relative; margin-bottom: 12px; transitio' +
+        'n: text-shadow 0.3s ease; }'
+      '    '
+      
+        '    .crm-divider { width: 100%; height: 2px; border-radius: 2px;' +
+        ' background-color: #3a3a3c; margin-bottom: 20px; opacity: 0; tra' +
+        'nsition: background-color 0.3s ease, box-shadow 0.3s ease; }'
+      
+        '    .oct-modal-overlay.active .crm-divider { animation: fadeIn 0' +
+        '.5s ease 0.4s forwards; }'
+      '    '
+      
+        '    .crm-stats-grid { display: grid; grid-template-columns: 1fr ' +
+        '1fr; gap: 12px; margin-bottom: 18px; width: 100%; }'
+      
+        '    .crm-stat-box { background: #1a1a1c; border: 1px solid #2a2a' +
+        '2c; border-radius: 12px; padding: 12px 5px; display: flex; flex-' +
+        'direction: column; align-items: center; justify-content: center;' +
+        ' }'
+      
+        '    .crm-stat-val { font-size: 1.4rem; font-weight: bold; color:' +
+        ' #fff; margin-bottom: 2px; font-variant-numeric: tabular-nums; l' +
+        'ine-height: 1.2; }'
+      
+        '    .crm-stat-lbl { font-size: 0.7rem; color: #818384; font-weig' +
+        'ht: bold; letter-spacing: 1px; text-transform: uppercase; }'
+      ''
+      
+        '    .modal-save-btn { width: 100%; background: #538d4e; color: #' +
+        'fff; border: none; padding: 16px; border-radius: 12px; font-weig' +
+        'ht: 800; font-size: 1rem; cursor: pointer; transition: 0.3s; fle' +
+        'x-shrink: 0; text-transform: uppercase; letter-spacing: 1px; }'
+      ''
       '    /* AN'#304'MASYONLAR */'
       
         '    @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; }' +
@@ -777,37 +796,47 @@ object QUEENS_FORM: TQUEENS_FORM
         ', 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%' +
         ', 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transfo' +
         'rm: translate3d(4px, 0, 0); } }'
+      
+        '    @keyframes swalPopIn { 0% { opacity: 0; transform: scale(0.8' +
+        '); } 80% { transform: scale(1.05); opacity: 1; } 100% { transfor' +
+        'm: scale(1); opacity: 1; } }'
+      
+        '    @keyframes gradeSectionIn { 0% { opacity: 0; transform: scal' +
+        'e(0.5) translateY(20px); } 100% { opacity: 1; transform: scale(1' +
+        ') translateY(0); } }'
+      
+        '    @keyframes fadeIn { 0% { opacity: 0; } 100% { opacity: 1; } ' +
+        '}'
       ''
-      '    /* ========================================='
-      '       MASA'#220'ST'#220' HOVER'
-      '       ========================================= */'
+      '    /* MASA'#220'ST'#220' HOVER */'
       '    @media (hover: hover) and (pointer: fine) {'
       '        .btn-back:hover { color: #ffffff; }'
       '        .q-btn:hover { background-color: #565758; }'
+      '        .modal-save-btn:hover { background-color: #467a42; }'
       '    }'
       ''
-      '    /* ========================================='
-      '       MOB'#304'L UYUMLULUK KATI KURALLARI'
-      '       ========================================= */'
+      '    /* MOB'#304'L UYUMLULUK */'
       '    @media (max-width: 500px) {'
       '        .queens-header { padding: 8px 10px; }'
       '        .queens-header h1 { font-size: 1.25rem; }'
       '        .queens-timer { font-size: 1.1rem; }'
       '        .btn-back { font-size: 1.25rem; }'
-      ''
       '        .queens-board-container { padding: 5px; }'
       '        .queens-board { max-width: 360px; border-width: 2px; }'
-      '        '
       '        .q-cell { font-size: 1.6rem; }'
       '        .q-cell.cross { font-size: 0.9rem; }'
-      ''
       
         '        .queens-controls { padding: 10px 10px 20px 10px; gap: 10' +
         'px; }'
       '        .q-btn { height: 60px; font-size: 1rem; }'
+      ''
+      
+        '        .modal-body { justify-content: flex-start; padding-botto' +
+        'm: 10px; }'
+      '        .crm-stats-grid { margin-top: auto; } '
+      '        .oct-modal-content { height: auto; min-height: 400px; }'
       '    }'
       ''
-      '    /* '#199'ok k'#252#231#252'k ekranlar (iPhone SE vb.) */'
       '    @media (max-width: 360px) {'
       '        .queens-board { max-width: 300px; }'
       '        .q-cell { font-size: 1.4rem; }'
@@ -817,11 +846,9 @@ object QUEENS_FORM: TQUEENS_FORM
         '}'
       '        .q-btn { height: 50px; font-size: 0.9rem; }'
       '    }'
-      ''
       '</style>'
       ''
       '<div class="queens-viewport">'
-      '    '
       '    <div class="queens-header">'
       
         '        <button class="btn-back" onclick="ajaxRequest(QUEENS_FOR' +
@@ -849,6 +876,58 @@ object QUEENS_FORM: TQUEENS_FORM
       '        </button>'
       '    </div>'
       ''
+      '    <div class="oct-modal-overlay" id="customResultModal">'
+      '        <div class="oct-modal-content">'
+      '            <div class="modal-header">'
+      '                <h2 id="crmTitle">TEBR'#304'KLER!</h2>'
+      '            </div>'
+      '            '
+      '            <div class="modal-body">'
+      '                <div id="crmSubText" class="crm-subtext"></div>'
+      '                '
+      '                <div class="crm-grade-section">'
+      '                    <div class="crm-grade-label">DERECE</div>'
+      
+        '                    <div class="crm-grade-value" id="crmBigGrade' +
+        '">S+</div>'
+      
+        '                    <div class="crm-divider" id="crmDivider"></d' +
+        'iv>'
+      '                </div>'
+      ''
+      '                <div class="crm-stats-grid">'
+      '                    <div class="crm-stat-box">'
+      
+        '                        <div class="crm-stat-val" id="crmTime">-' +
+        '-:--</div>'
+      '                        <div class="crm-stat-lbl">S'#220'RE</div>'
+      '                    </div>'
+      '                    <div class="crm-stat-box">'
+      
+        '                        <div class="crm-stat-val" id="crmTries">' +
+        '-</div>'
+      '                        <div class="crm-stat-lbl">HAMLE</div>'
+      '                    </div>'
+      '                    <div class="crm-stat-box">'
+      
+        '                        <div class="crm-stat-val" id="crmAvgTime' +
+        '"><i class="fa-solid fa-spinner fa-spin"></i></div>'
+      '                        <div class="crm-stat-lbl">ORTALAMA</div>'
+      '                    </div>'
+      '                    <div class="crm-stat-box">'
+      
+        '                        <div class="crm-stat-val" id="crmPercent' +
+        'ile"><i class="fa-solid fa-spinner fa-spin"></i></div>'
+      '                        <div class="crm-stat-lbl">Y'#220'ZDEL'#304'K</div>'
+      '                    </div>'
+      '                </div>'
+      ''
+      
+        '                <button class="modal-save-btn" onclick="window.c' +
+        'loseResultModal()">KAPAT</button>'
+      '            </div>'
+      '        </div>'
+      '    </div>'
       '</div>')
     Align = alClient
     OnAjaxEvent = QueensHTMLAjaxEvent

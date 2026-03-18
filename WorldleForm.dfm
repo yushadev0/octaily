@@ -19,6 +19,7 @@ object WORLDLE_FORM: TWORLDLE_FORM
     'window.targetIso = "";'
     'window.worldleCountries = []; '
     'window.currentFocus = -1;'
+    'window.worldleStartTimeStamp = 0;'
     ''
     'window.getVisibleViewport = function() {'
     '    var vps = document.querySelectorAll('#39'.worldle-viewport'#39');'
@@ -35,45 +36,7 @@ object WORLDLE_FORM: TWORLDLE_FORM
     '    return vp ? vp.querySelector(selector) : null; '
     '};'
     ''
-    'window.injectOctailyStyles = function() {'
-    '    if (!document.getElementById("octailyGlobalStyle")) {'
-    '        var style = document.createElement("style");'
-    '        style.id = "octailyGlobalStyle";'
-    '        style.innerHTML = '
-    
-      '            ".swal2-container { z-index: 2147483647 !important; ' +
-      '} " +'
-    
-      '            ".oct-popup { background: #121213 !important; border' +
-      ': 1px solid #3a3a3c !important; color: #fff !important; border-r' +
-      'adius: 12px !important; } " +'
-    
-      '            ".oct-title { color: #fff !important; font-weight: 8' +
-      '00 !important; font-size: 1.4rem !important; margin-top: 10px !i' +
-      'mportant; letter-spacing: 1px !important; } " +'
-    
-      '            ".oct-content { color: #818384 !important; font-size' +
-      ': 1.1rem !important; margin-top: 15px !important; line-height: 1' +
-      '.6 !important; } " +'
-    
-      '            ".oct-confirm { background: #538d4e !important; colo' +
-      'r: #fff !important; font-weight: bold !important; padding: 12px ' +
-      '30px !important; border-radius: 6px !important; border: none !im' +
-      'portant; margin: 15px !important; cursor: pointer; font-family: ' +
-      'sans-serif; font-size: 1.1rem !important; } " +'
-    
-      '            ".oct-cancel { background: #3a3a3c !important; color' +
-      ': #fff !important; padding: 12px 25px !important; border-radius:' +
-      ' 6px !important; border: none !important; margin: 10px !importan' +
-      't; cursor: pointer; font-family: sans-serif; } " +'
-    
-      '            ".oct-icon { border: none !important; color: #b59f3b' +
-      ' !important; font-size: 2.5rem !important; display: flex !import' +
-      'ant; align-items: center !important; justify-content: center !im' +
-      'portant; margin: 10px auto !important; } ";'
-    '        document.head.appendChild(style);'
-    '    }'
-    '};'
+    'window.injectOctailyStyles = function() {}; '
     ''
     'window.getTodayStr = function() {'
     '    var d = new Date();'
@@ -82,9 +45,6 @@ object WORLDLE_FORM: TWORLDLE_FORM
     '    return d.getFullYear() + '#39'-'#39' + m + '#39'-'#39' + day;'
     '};'
     ''
-    
-      '// G'#220'NCELLEND'#304': '#39'I'#39' -> '#39#305#39' zorlamas'#305' kald'#305'r'#305'ld'#305', b'#246'ylece AMERIKA' +
-      ' -> Amer'#305'ka bozulmas'#305' '#246'nlendi.'
     'window.turkishToUpper = function(str) {'
     
       '    var letters = { "i": "'#304'", "'#351'": "'#350'", "'#287'": "'#286'", "'#252'": "'#220'", "'#246'":' +
@@ -103,9 +63,6 @@ object WORLDLE_FORM: TWORLDLE_FORM
       'l]; }).toLowerCase();'
     '};'
     ''
-    
-      '// G'#220'NCELLEND'#304': .trim() kald'#305'r'#305'ld'#305' ki arama esnas'#305'nda index (vur' +
-      'gulama) kaymas'#305' ya'#351'anmas'#305'n.'
     'window.normalizeForWorldle = function(str) {'
     '    if (!str) return "";'
     '    return window.turkishToUpper(str)'
@@ -130,7 +87,6 @@ object WORLDLE_FORM: TWORLDLE_FORM
     '    }).join('#39' '#39');'
     '};'
     ''
-    '// TAHM'#304'N ED'#304'LEN '#220'LKEY'#304' KONTROL'
     'window.isAlreadyGuessed = function(cName) {'
     '    var normInput = window.normalizeForWorldle(cName).trim();'
     '    for (var i = 0; i < window.worldleGuesses.length; i++) {'
@@ -161,8 +117,8 @@ object WORLDLE_FORM: TWORLDLE_FORM
     '};'
     ''
     
-      'window.initWorldleWithServer = function(serverId, encryptedIso, ' +
-      'countryListStr) {'
+      'window.initWorldleWithServer = function(serverId, encryptedIso) ' +
+      '{'
     '    window.worldleGameOver = false;'
     '    window.worldleElapsedTime = 0;'
     '    window.worldleIsWin = false;'
@@ -206,7 +162,6 @@ object WORLDLE_FORM: TWORLDLE_FORM
     '};'
     ''
     'window.initWorldleBoard = function() {'
-    '    window.injectOctailyStyles();'
     '    var guessesEl = window.worldleEl('#39'#worldleGuesses'#39');'
     
       '    if (!guessesEl) { setTimeout(window.initWorldleBoard, 100); ' +
@@ -227,14 +182,20 @@ object WORLDLE_FORM: TWORLDLE_FORM
       '    if (window.worldleTimerInterval) clearInterval(window.worldl' +
       'eTimerInterval);'
     '    if (window.worldleGameOver) return;'
+    '    '
     
-      '    var startTime = Date.now() - (window.worldleElapsedTime * 10' +
-      '00);'
+      '    if (!window.worldleStartTimeStamp || window.worldleStartTime' +
+      'Stamp === 0) {'
+    
+      '        window.worldleStartTimeStamp = Date.now() - (window.worl' +
+      'dleElapsedTime * 1000);'
+    '    }'
+    '    '
     '    var timerEl = window.worldleEl('#39'#worldleTimer'#39');'
     '    window.worldleTimerInterval = setInterval(function() {'
     
-      '        window.worldleElapsedTime = Math.floor((Date.now() - sta' +
-      'rtTime) / 1000);'
+      '        window.worldleElapsedTime = Math.floor((Date.now() - win' +
+      'dow.worldleStartTimeStamp) / 1000);'
     '        if (timerEl) {'
     
       '            var m = Math.floor(window.worldleElapsedTime / 60).t' +
@@ -299,6 +260,8 @@ object WORLDLE_FORM: TWORLDLE_FORM
     '};'
     ''
     'window.loadWorldleState = function() {'
+    '    if (window.worldleGameOver) return;'
+    '    '
     '    var saved = localStorage.getItem('#39'octaily_worldle_state'#39');'
     '    if (saved) {'
     '        try {'
@@ -347,17 +310,24 @@ object WORLDLE_FORM: TWORLDLE_FORM
     '    return '#39'D'#39';'
     '};'
     ''
-    'window.showWorldleGameOver = function(isReplay) {'
+    
+      'window.showWorldleGameOver = function(isReplay, savedTries, save' +
+      'dTime, savedIsWin) {'
     
       '    if (window.worldleTimerInterval) clearInterval(window.worldl' +
       'eTimerInterval);'
     ''
-    '    var time = window.worldleElapsedTime;'
-    '    var tries = window.worldleGuesses.length;'
-    '    var isWin = true; '
     
-      '    var grade = isReplay ? window.finalGrade : window.calculateG' +
-      'rade(time, isWin);'
+      '    var time = (isReplay && savedTime !== undefined) ? savedTime' +
+      ' : window.worldleElapsedTime;'
+    
+      '    var tries = (isReplay && savedTries !== undefined) ? savedTr' +
+      'ies : window.worldleGuesses.length;'
+    
+      '    var isWin = (isReplay && savedIsWin !== undefined) ? savedIs' +
+      'Win : window.worldleIsWin; '
+    '    '
+    '    var grade = window.calculateGrade(time, isWin);'
     ''
     '    var m = Math.floor(time / 60).toString().padStart(2, '#39'0'#39');'
     '    var s = (time % 60).toString().padStart(2, '#39'0'#39');'
@@ -375,7 +345,7 @@ object WORLDLE_FORM: TWORLDLE_FORM
     '                '#39'time='#39' + time, '
     '                '#39'tries='#39' + tries, '
     '                '#39'grade='#39' + grade, '
-    '                '#39'isWin=1'#39',            '
+    '                '#39'isWin='#39' + (isWin ? '#39'1'#39' : '#39'0'#39'),            '
     '                '#39'game_type=worldle'#39' '
     '            ]);'
     '        }'
@@ -388,54 +358,99 @@ object WORLDLE_FORM: TWORLDLE_FORM
     ''
     '    var modalTitle = isReplay ? '#39'G'#220'N'#220'N '#214'ZET'#304#39' : '#39'TEBR'#304'KLER!'#39'; '
     
-      '    var subText = isReplay ? '#39'<div style="color:#818384; font-si' +
-      'ze:0.95rem; margin-bottom:20px;">Bug'#252'n'#252'n haritas'#305'n'#305' zaten '#231#246'zd'#252'n' +
-      '!</div>'#39' : '#39#39';'
-    '    var modalIcon = isReplay ? '#39'info'#39' : '#39'success'#39';'
-    '    var triesStr = tries.toString();'
-    ''
-    '    var htmlContent = subText +'
+      '    if (!isWin) modalTitle = isReplay ? '#39'G'#220'N'#220'N '#214'ZET'#304#39' : '#39'YARIN Y' +
+      #304'NE DENE!'#39';'
+    '    '
+    '    document.getElementById('#39'crmTitle'#39').innerText = modalTitle;'
     
-      '        '#39'<div style="display:flex; justify-content:space-around;' +
-      ' align-items:center; margin-top:10px;">'#39' +'
+      '    document.getElementById('#39'crmTitle'#39').style.color = isWin ? '#39'#' +
+      'fff'#39' : (isReplay ? '#39'#fff'#39' : '#39'#e74c3c'#39');'
+    '    '
+    '    var subTextEl = document.getElementById('#39'crmSubText'#39');'
+    '    if (isReplay) {'
     
-      '            '#39'<div style="text-align:center;"><div style="font-si' +
-      'ze:3rem; font-weight:900; color:'#39' + gradeColor + '#39';">'#39' + grade +' +
-      ' '#39'</div><div style="font-size:0.9rem; color:#818384; letter-spac' +
-      'ing:1px;">DERECE</div></div>'#39' +'
-    
-      '            '#39'<div style="text-align:center;"><div style="font-si' +
-      'ze:2rem; font-weight:bold; color:#fff; line-height:3rem;">'#39' + ti' +
-      'meStr + '#39'</div><div style="font-size:0.9rem; color:#818384; lett' +
-      'er-spacing:1px;">S'#220'RE</div></div>'#39' +'
-    
-      '            '#39'<div style="text-align:center;"><div style="font-si' +
-      'ze:2rem; font-weight:bold; color:#fff; line-height:3rem;">'#39' + tr' +
-      'iesStr + '#39'</div><div style="font-size:0.9rem; color:#818384; let' +
-      'ter-spacing:1px;">DENEME</div></div>'#39' +'
-    '        '#39'</div>'#39';'
-    ''
-    
-      '    var mySwal = (typeof Swal !== '#39'undefined'#39') ? Swal : (window.' +
-      'parent && window.parent.Swal ? window.parent.Swal : null);'
-    '    if (mySwal) {'
-    '        mySwal.fire({'
-    
-      '            target: window.getVisibleViewport() || document.body' +
-      ','
-    
-      '            title: modalTitle, html: htmlContent, icon: modalIco' +
-      'n, confirmButtonText: '#39#199'IK'#39', background: '#39'#1a1a1b'#39', color: '#39'#fff' +
-      'fff'#39','
-    
-      '            customClass: { popup: '#39'oct-popup'#39', title: '#39'oct-title' +
-      #39', confirmButton: '#39'oct-confirm'#39', icon: '#39'oct-icon'#39' },'
-    
-      '            didOpen: function() { var container = document.query' +
-      'Selector('#39'.swal2-container'#39'); if (container) container.style.zIn' +
-      'dex = "2147483647"; }'
-    '        });'
+      '        subTextEl.innerHTML = '#39'Bug'#252'n'#252'n haritas'#305'n'#305' zaten '#231#246'zd'#252'n!'#39 +
+      ';'
+    '        subTextEl.style.display = '#39'block'#39';'
+    '    } else {'
+    '        subTextEl.style.display = '#39'none'#39';'
     '    }'
+    ''
+    '    var bigGrade = document.getElementById('#39'crmBigGrade'#39');'
+    '    bigGrade.innerText = grade;'
+    '    bigGrade.style.color = gradeColor;'
+    '    bigGrade.style.textShadow = '#39'0 0 20px '#39' + gradeColor + '#39'60'#39';'
+    '    '
+    '    var divider = document.getElementById('#39'crmDivider'#39');'
+    '    if (divider) {'
+    '        divider.style.backgroundColor = gradeColor;'
+    
+      '        divider.style.boxShadow = '#39'0 0 12px '#39' + gradeColor + '#39'80' +
+      #39';'
+    '    }'
+    ''
+    '    document.getElementById('#39'crmTime'#39').innerText = timeStr;'
+    
+      '    document.getElementById('#39'crmTries'#39').innerText = isWin ? trie' +
+      's.toString() : '#39'X'#39';'
+    
+      '    if (isReplay && tries === 0 && !isWin) document.getElementBy' +
+      'Id('#39'crmTries'#39').innerText = '#39'-'#39';'
+    ''
+    
+      '    document.getElementById('#39'crmAvgTime'#39').innerHTML = '#39'<i class=' +
+      '"fa-solid fa-spinner fa-spin"></i>'#39';'
+    
+      '    document.getElementById('#39'crmPercentile'#39').innerHTML = '#39'<i cla' +
+      'ss="fa-solid fa-spinner fa-spin"></i>'#39';'
+    
+      '    document.getElementById('#39'crmAnswerText'#39').innerHTML = '#39'<i cla' +
+      'ss="fa-solid fa-spinner fa-spin"></i>'#39';'
+    ''
+    
+      '    document.getElementById('#39'customResultModal'#39').classList.add('#39 +
+      'active'#39');'
+    ''
+    '    setTimeout(function() {'
+    '        if (typeof ajaxRequest !== '#39'undefined'#39') {'
+    
+      '            ajaxRequest(WORLDLE_FORM.WorldleHTML, '#39'GetPanelStats' +
+      #39', ['#39'game_type=worldle'#39']);'
+    '        }'
+    '    }, isReplay ? 0 : 500);'
+    '};'
+    ''
+    
+      'window.updatePanelStats = function(avgTimeSec, percentile, answe' +
+      'rText) {'
+    
+      '    var m = Math.floor(avgTimeSec / 60).toString().padStart(2, '#39 +
+      '0'#39');'
+    '    var s = (avgTimeSec % 60).toString().padStart(2, '#39'0'#39');'
+    
+      '    document.getElementById('#39'crmAvgTime'#39').innerText = (avgTimeSe' +
+      'c > 0) ? (m + '#39':'#39' + s) : '#39'--:--'#39';'
+    
+      '    document.getElementById('#39'crmPercentile'#39').innerText = '#39'%'#39' + p' +
+      'ercentile;'
+    '    '
+    '    if (answerText) {'
+    
+      '        document.getElementById('#39'crmAnswerText'#39').innerText = ans' +
+      'werText;'
+    '    } else {'
+    
+      '        document.getElementById('#39'crmAnswerText'#39').innerText = "G'#304 +
+      'ZL'#304'";'
+    '    }'
+    '};'
+    ''
+    'window.closeResultModal = function() {'
+    '    var modal = document.getElementById('#39'customResultModal'#39');'
+    '    if(modal) modal.classList.remove('#39'active'#39');'
+    
+      '    if (typeof ajaxRequest !== '#39'undefined'#39') ajaxRequest(WORLDLE_' +
+      'FORM.WorldleHTML, '#39'closePage'#39');'
     '};'
     ''
     'window.closeAllLists = function(elmnt) {'
@@ -578,15 +593,35 @@ object WORLDLE_FORM: TWORLDLE_FORM
     ''
     '    if (!isValid) {'
     
-      '        window.showWorldleError("L'#252'tfen listeden ge'#231'erli bir '#252'lk' +
-      'e se'#231'in.");'
+      '        var mySwal = (typeof Swal !== '#39'undefined'#39') ? Swal : (win' +
+      'dow.parent && window.parent.Swal ? window.parent.Swal : null);'
+    '        if(mySwal){'
+    '            mySwal.fire({'
+    
+      '                target: window.getVisibleViewport() || document.' +
+      'body, title: '#39'HATA!'#39', text: "L'#252'tfen listeden ge'#231'erli bir '#252'lke se' +
+      #231'in.", icon: '#39'warning'#39', toast: true, position: '#39'top'#39', showConfir' +
+      'mButton: false, timer: 2000, background: '#39'#1a1a1b'#39', color: '#39'#fff' +
+      'fff'#39', customClass: { popup: '#39'oct-popup'#39' }'
+    '            });'
+    '        }'
     '        return;'
     '    }'
     ''
     '    if (window.isAlreadyGuessed(selectedOriginalName)) {'
     
-      '        window.showWorldleError("Bu '#252'lkeyi zaten tahmin ettiniz!' +
-      '");'
+      '        var mySwal2 = (typeof Swal !== '#39'undefined'#39') ? Swal : (wi' +
+      'ndow.parent && window.parent.Swal ? window.parent.Swal : null);'
+    '        if(mySwal2){'
+    '            mySwal2.fire({'
+    
+      '                target: window.getVisibleViewport() || document.' +
+      'body, title: '#39'HATA!'#39', text: "Bu '#252'lkeyi zaten tahmin ettiniz!", i' +
+      'con: '#39'warning'#39', toast: true, position: '#39'top'#39', showConfirmButton:' +
+      ' false, timer: 2000, background: '#39'#1a1a1b'#39', color: '#39'#ffffff'#39', cu' +
+      'stomClass: { popup: '#39'oct-popup'#39' }'
+    '            });'
+    '        }'
     '        return;'
     '    }'
     ''
@@ -643,28 +678,6 @@ object WORLDLE_FORM: TWORLDLE_FORM
     '    }'
     '};'
     ''
-    'window.showWorldleError = function(errorMsg) {'
-    
-      '    var mySwal = (typeof Swal !== '#39'undefined'#39') ? Swal : (window.' +
-      'parent && window.parent.Swal ? window.parent.Swal : null);'
-    '    if (mySwal && errorMsg) {'
-    '        mySwal.fire({'
-    
-      '            target: window.getVisibleViewport() || document.body' +
-      ', title: '#39'HATA!'#39', text: errorMsg, icon: '#39'warning'#39', toast: true, ' +
-      'position: '#39'top'#39', showConfirmButton: false, timer: 2000, backgrou' +
-      'nd: '#39'#1a1a1b'#39', color: '#39'#ffffff'#39', customClass: { popup: '#39'oct-popu' +
-      'p'#39' }'
-    '        });'
-    '    }'
-    '    var inputEl = window.worldleEl('#39'#worldleInput'#39');'
-    '    if (inputEl) {'
-    
-      '        inputEl.classList.remove('#39'shake'#39'); void inputEl.offsetWi' +
-      'dth; inputEl.classList.add('#39'shake'#39');'
-    '    }'
-    '};'
-    ''
     
       'if (window.worldleKeyHandler) document.removeEventListener('#39'keyd' +
       'own'#39', window.worldleKeyHandler);'
@@ -707,24 +720,19 @@ object WORLDLE_FORM: TWORLDLE_FORM
     '    if (e.target && e.target.id === '#39'worldleInput'#39') {'
     '        var start = e.target.selectionStart;'
     '        var end = e.target.selectionEnd;'
-    '        '
     '        e.target.value = window.toTitleCase(e.target.value);'
-    '        '
     '        e.target.setSelectionRange(start, end);'
-    '        '
     '        window.handleInputAutocomplete();'
     '    }'
     '};'
     ''
     'window.worldleClickHandler = function(e) {'
     '    if (!window.getVisibleViewport()) return; '
-    '    '
     '    var btn = e.target.closest('#39'#worldleSubmitBtn'#39');'
     '    if (btn) { '
     '        window.submitWorldleGuess(); '
     '        return;'
     '    }'
-    '    '
     '    var inp = window.worldleEl('#39'#worldleInput'#39');'
     '    if (e.target !== inp) {'
     '        window.closeAllLists(e.target);'
@@ -743,18 +751,12 @@ object WORLDLE_FORM: TWORLDLE_FORM
     Hint = ''
     HTML.Strings = (
       '<style>'
-      '    /* ========================================='
-      '       S'#304'STEM RESET & K'#304'L'#304'TLER'
-      '       ========================================= */'
       '    html, body {'
       '        margin: 0 !important; padding: 0 !important;'
       '        width: 100% !important; height: 100% !important;'
       '        background-color: #121213 !important;'
       '        overflow: hidden !important;'
       '        overscroll-behavior: none !important;'
-      
-        '        /* Ana ekran kaymas'#305'n'#305' kilitler (Ama scroll alanlara a'#351'a' +
-        #287#305'da pan-y izni verdik) */'
       '        touch-action: none !important; '
       
         '        -webkit-border-radius: 0 !important; border-radius: 0 !i' +
@@ -764,9 +766,6 @@ object WORLDLE_FORM: TWORLDLE_FORM
         'mportant;'
       '    }'
       ''
-      '    /* ========================================='
-      '       GENEL TASARIM VE V'#304'EWPORT'
-      '       ========================================= */'
       '    .worldle-viewport {'
       '        position: fixed;'
       '        top: 0; left: 0; right: 0; bottom: 0;'
@@ -782,15 +781,10 @@ object WORLDLE_FORM: TWORLDLE_FORM
       '        padding-top: env(safe-area-inset-top);'
       '        padding-bottom: env(safe-area-inset-bottom);'
       '        box-sizing: border-box;'
-      '        '
-      '        /* iOS GR'#304' K'#214#350'E SIZINTISI '#304#199#304'N KES'#304'N '#199#214'Z'#220'MLER */'
       '        box-shadow: 0 0 0 100vmax #121213; '
       '        clip-path: inset(0); '
       '    }'
       ''
-      '    /* ========================================='
-      '       '#220'ST BA'#350'LIK VE KRONOMETRE'
-      '       ========================================= */'
       '    .worldle-header {'
       '        width: 100%; max-width: 600px;'
       
@@ -818,14 +812,9 @@ object WORLDLE_FORM: TWORLDLE_FORM
         'ace; color: #818384; font-size: 1.2rem; font-weight: bold; width' +
         ': 60px; text-align: right; }'
       ''
-      '    /* ========================================='
-      '       HAR'#304'TA / '#220'LKE S'#304'L'#220'ET'#304
-      '       ========================================= */'
       '    .worldle-map-container {'
       '        width: 100%; max-width: 400px; '
-      
-        '        height: 25vh; min-height: 120px; max-height: 200px; /* K' +
-        'lavyede daralabilmesi i'#231'in esnetildi */'
+      '        height: 25vh; min-height: 120px; max-height: 200px; '
       
         '        margin: 15px 0; display: flex; justify-content: center; ' +
         'align-items: center;'
@@ -836,30 +825,17 @@ object WORLDLE_FORM: TWORLDLE_FORM
       '        max-width: 100%; max-height: 100%; object-fit: contain;'
       '        filter: invert(1) brightness(0.8); '
       '        animation: fadeIn 1s ease-in-out;'
-      
-        '        pointer-events: none; /* Haritan'#305'n yanl'#305#351'l'#305'kla s'#252'r'#252'klenm' +
-        'esini '#246'nler */'
+      '        pointer-events: none; '
       '    }'
       ''
-      '    /* ========================================='
-      '       TAHM'#304'N L'#304'STES'#304' (Kayd'#305'r'#305'labilir / Scrollable)'
-      '       ========================================= */'
       '    .worldle-guesses {'
       '        flex-grow: 1; width: 100%; max-width: 600px;'
       '        display: flex; flex-direction: column; gap: 8px;'
       '        padding: 5px 15px; box-sizing: border-box; '
       '        overflow-y: auto;'
-      '        '
-      '        /* MOB'#304'L SCROLL K'#304'L'#304'D'#304' A'#199'ICILARI */'
-      
-        '        touch-action: pan-y; /* Yukar'#305'-A'#351'a'#287#305' kayd'#305'rmaya izin ver' +
-        ' */'
-      
-        '        -webkit-overflow-scrolling: touch; /* iOS Ya'#287' gibi kayd'#305 +
-        'rma efekti */'
-      
-        '        overscroll-behavior: contain; /* Sayfa sonuna gelince an' +
-        'a g'#246'vdeyi esnetmez */'
+      '        touch-action: pan-y; '
+      '        -webkit-overflow-scrolling: touch; '
+      '        overscroll-behavior: contain; '
       '    }'
       ''
       '    .guess-row {'
@@ -889,9 +865,6 @@ object WORLDLE_FORM: TWORLDLE_FORM
         '    .guess-perc { width: 45px; text-align: right; color: #538d4e' +
         '; }'
       ''
-      '    /* ========================================='
-      '       G'#304'RD'#304' (INPUT) VE AUTOCOMPLETE (DROPBOX)'
-      '       ========================================= */'
       '    .worldle-input-area {'
       
         '        width: 100%; max-width: 600px; padding: 12px 15px; box-s' +
@@ -922,10 +895,6 @@ object WORLDLE_FORM: TWORLDLE_FORM
         '        outline: none; transition: border-color 0.2s; text-trans' +
         'form: uppercase; box-sizing: border-box;'
       '        -webkit-appearance: none; appearance: none;'
-      '        '
-      
-        '        /* '#199'OK '#214'NEML'#304': Safari'#39'de inputa t'#305'klay'#305'nca sayfan'#305'n otom' +
-        'atik zoom yapmas'#305'n'#305' engeller */'
       '        font-size: 16px !important; '
       '    }'
       '    .worldle-input:focus { border-color: #818384; }'
@@ -935,14 +904,10 @@ object WORLDLE_FORM: TWORLDLE_FORM
         '        position: absolute; border: 1px solid #565758; border-bo' +
         'ttom: none;'
       '        z-index: 101; bottom: 100%; left: 0; right: 0; '
-      
-        '        max-height: 35vh; /* Liste '#231'ok uzay'#305'p klavye arkas'#305'nda k' +
-        'aybolmas'#305'n diye dinamik y'#252'kseklik */'
+      '        max-height: 35vh; '
       '        overflow-y: auto;'
       '        background-color: #2a2a2c; border-radius: 8px 8px 0 0; '
       '        box-shadow: 0 -10px 20px rgba(0,0,0,0.5);'
-      '        '
-      '        /* MOB'#304'L SCROLL K'#304'L'#304'D'#304' A'#199'ICILARI */'
       '        touch-action: pan-y; '
       '        -webkit-overflow-scrolling: touch;'
       '        overscroll-behavior: contain;'
@@ -978,26 +943,128 @@ object WORLDLE_FORM: TWORLDLE_FORM
       '    }'
       '    .worldle-btn:active { transform: scale(0.92); }'
       ''
-      '    /* AN'#304'MASYONLAR */'
+      '    /* CUSTOM SONU'#199' PANEL'#304' CSS'#39'LER'#304' */'
+      
+        '    .oct-modal-overlay { position: fixed; top: 0; left: 0; width' +
+        ': 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-' +
+        'filter: blur(8px); display: flex; justify-content: center; align' +
+        '-items: center; z-index: 11000; opacity: 0; visibility: hidden; ' +
+        'transition: opacity 0.3s ease, visibility 0.3s ease; padding: 15' +
+        'px; box-sizing: border-box; }'
+      
+        '    .oct-modal-overlay.active { opacity: 1; visibility: visible;' +
+        ' }'
+      '    '
+      
+        '    .oct-modal-content { background: #161618; width: 100%; max-w' +
+        'idth: 350px; border-radius: 16px; border: 1px solid #333; displa' +
+        'y: flex; flex-direction: column; text-align: center; overflow: h' +
+        'idden; opacity: 0; max-height: 92vh; }'
+      
+        '    .oct-modal-overlay.active .oct-modal-content { animation: sw' +
+        'alPopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }'
+      ''
+      
+        '    .modal-header { padding: 18px 20px; background: #1a1a1c; dis' +
+        'play: flex; justify-content: center; align-items: center; border' +
+        '-bottom: 1px solid #2a2a2c; position: relative; flex-shrink: 0; ' +
+        '}'
+      
+        '    .modal-header h2 { margin: 0; font-size: 1.2rem; color: #fff' +
+        '; font-weight: 800; letter-spacing: 1.5px; text-transform: upper' +
+        'case; }'
+      '    '
+      
+        '    .modal-body { padding: 15px 20px; display: flex; flex-direct' +
+        'ion: column; align-items: center; overflow-y: auto; touch-action' +
+        ': pan-y; -webkit-overflow-scrolling: touch; overscroll-behavior:' +
+        ' contain; flex-grow: 1; }'
+      
+        '    .crm-subtext { color: #818384; font-size: 0.85rem; margin-bo' +
+        'ttom: 12px; display: none; }'
+      '    '
+      
+        '    .crm-grade-section { margin: 5px auto 10px auto; display: fl' +
+        'ex; flex-direction: column; align-items: center; width: 100%; fl' +
+        'ex-shrink: 0; opacity: 0; }'
+      
+        '    .oct-modal-overlay.active .crm-grade-section { animation: gr' +
+        'adeSectionIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s forward' +
+        's; }'
+      ''
+      
+        '    .crm-grade-label { font-size: 0.75rem; color: #818384; font-' +
+        'weight: bold; letter-spacing: 2px; margin-bottom: 2px; text-tran' +
+        'sform: uppercase; }'
+      
+        '    .crm-grade-value { font-size: 4.5rem; font-weight: 900; line' +
+        '-height: 1.1; position: relative; margin-bottom: 12px; transitio' +
+        'n: text-shadow 0.3s ease; }'
+      '    '
+      
+        '    .crm-divider { width: 100%; height: 2px; border-radius: 2px;' +
+        ' background-color: #3a3a3c; margin-bottom: 20px; opacity: 0; tra' +
+        'nsition: background-color 0.3s ease, box-shadow 0.3s ease; }'
+      
+        '    .oct-modal-overlay.active .crm-divider { animation: fadeIn 0' +
+        '.5s ease 0.4s forwards; }'
+      '    '
+      
+        '    .crm-stats-grid { display: grid; grid-template-columns: 1fr ' +
+        '1fr; gap: 12px; margin-bottom: 18px; width: 100%; }'
+      
+        '    .crm-stat-box { background: #1a1a1c; border: 1px solid #2a2a' +
+        '2c; border-radius: 12px; padding: 12px 5px; display: flex; flex-' +
+        'direction: column; align-items: center; justify-content: center;' +
+        ' }'
+      
+        '    .crm-stat-val { font-size: 1.4rem; font-weight: bold; color:' +
+        ' #fff; margin-bottom: 2px; font-variant-numeric: tabular-nums; l' +
+        'ine-height: 1.2; }'
+      
+        '    .crm-stat-lbl { font-size: 0.7rem; color: #818384; font-weig' +
+        'ht: bold; letter-spacing: 1px; text-transform: uppercase; }'
+      '    '
+      
+        '    .crm-answer-box { background: rgba(83, 141, 78, 0.1); border' +
+        ': 1px dashed #538d4e; border-radius: 12px; padding: 12px; margin' +
+        '-bottom: 20px; width: 100%; box-sizing: border-box; }'
+      
+        '    .crm-answer-lbl { font-size: 0.75rem; color: #538d4e; font-w' +
+        'eight: bold; letter-spacing: 1px; margin-bottom: 4px; }'
+      
+        '    .crm-answer-val { font-size: 1.3rem; color: #fff; font-weigh' +
+        't: 800; text-transform: uppercase; letter-spacing: 1.5px; }'
+      ''
+      
+        '    .modal-save-btn { width: 100%; background: #538d4e; color: #' +
+        'fff; border: none; padding: 16px; border-radius: 12px; font-weig' +
+        'ht: 800; font-size: 1rem; cursor: pointer; transition: 0.3s; fle' +
+        'x-shrink: 0; text-transform: uppercase; letter-spacing: 1px; }'
+      ''
       
         '    @keyframes popIn { 0% { opacity: 0; transform: scale(0.9); }' +
         ' 100% { opacity: 1; transform: scale(1); } }'
       
         '    @keyframes fadeIn { 0% { opacity: 0; } 100% { opacity: 1; } ' +
         '}'
-      '    @keyframes shake {'
-      '        10%, 90% { transform: translate3d(-2px, 0, 0); }'
-      '        20%, 80% { transform: translate3d(4px, 0, 0); }'
-      '        30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }'
-      '        40%, 60% { transform: translate3d(6px, 0, 0); }'
-      '    }'
+      
+        '    @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0' +
+        ', 0); } 20%, 80% { transform: translate3d(4px, 0, 0); } 30%, 50%' +
+        ', 70% { transform: translate3d(-6px, 0, 0); } 40%, 60% { transfo' +
+        'rm: translate3d(6px, 0, 0); } }'
       
         '    .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97)' +
         ' both; border-color: #e74c3c !important; }'
+      
+        '    @keyframes swalPopIn { 0% { opacity: 0; transform: scale(0.8' +
+        '); } 80% { transform: scale(1.05); opacity: 1; } 100% { transfor' +
+        'm: scale(1); opacity: 1; } }'
+      
+        '    @keyframes gradeSectionIn { 0% { opacity: 0; transform: scal' +
+        'e(0.5) translateY(20px); } 100% { opacity: 1; transform: scale(1' +
+        ') translateY(0); } }'
       ''
-      '    /* ========================================='
-      '       MASA'#220'ST'#220' HOVER'
-      '       ========================================= */'
       '    @media (hover: hover) and (pointer: fine) {'
       '        .btn-back:hover { color: #ffffff; }'
       '        .autocomplete-item:hover { background-color: #538d4e; }'
@@ -1005,11 +1072,17 @@ object WORLDLE_FORM: TWORLDLE_FORM
         '        .autocomplete-item:hover .hl-text { color: #ffffff; text' +
         '-decoration: underline; }'
       '        .worldle-btn:hover { background-color: #467a42; }'
+      '        .modal-save-btn:hover { background-color: #467a42; }'
       '    }'
       ''
-      '    /* ========================================='
-      '       MOB'#304'L UYUMLULUK ('#199'ok k'#252#231#252'k ekranlar)'
-      '       ========================================= */'
+      '    @media (max-width: 500px) {'
+      
+        '        .modal-body { justify-content: flex-start; padding-botto' +
+        'm: 10px; }'
+      '        .crm-stats-grid { margin-top: auto; } '
+      '        .oct-modal-content { height: auto; min-height: 450px; }'
+      '    }'
+      ''
       '    @media (max-width: 360px) {'
       '        .worldle-header h1 { font-size: 1.3rem; }'
       '        .worldle-map-container { margin: 10px 0; height: 20vh; }'
@@ -1022,9 +1095,8 @@ object WORLDLE_FORM: TWORLDLE_FORM
       '<div class="worldle-viewport">'
       '    <div class="worldle-header">'
       
-        '        <button class="btn-back" onclick="ajaxRequest(WORLDLE_FO' +
-        'RM.WorldleHTML, '#39'closePage'#39');"><i class="fa-solid fa-arrow-left"' +
-        '></i></button>'
+        '        <button class="btn-back" onclick="window.closeResultModa' +
+        'l();"><i class="fa-solid fa-arrow-left"></i></button>'
       '        <h1>WORLDLE</h1>'
       '        <div id="worldleTimer" class="worldle-timer">00:00</div>'
       '    </div>'
@@ -1049,6 +1121,67 @@ object WORLDLE_FORM: TWORLDLE_FORM
       
         '        <button id="worldleSubmitBtn" class="worldle-btn"><i cla' +
         'ss="fa-solid fa-paper-plane"></i></button>'
+      '    </div>'
+      ''
+      '    <div class="oct-modal-overlay" id="customResultModal">'
+      '        <div class="oct-modal-content">'
+      '            <div class="modal-header">'
+      '                <h2 id="crmTitle">TEBR'#304'KLER!</h2>'
+      '            </div>'
+      '            <div class="modal-body">'
+      '                <div id="crmSubText" class="crm-subtext"></div>'
+      '                '
+      '                <div class="crm-grade-section">'
+      '                    <div class="crm-grade-label">DERECE</div>'
+      
+        '                    <div class="crm-grade-value" id="crmBigGrade' +
+        '">S+</div>'
+      
+        '                    <div class="crm-divider" id="crmDivider"></d' +
+        'iv>'
+      '                </div>'
+      ''
+      '                <div class="crm-stats-grid">'
+      '                    <div class="crm-stat-box">'
+      
+        '                        <div class="crm-stat-val" id="crmTime">-' +
+        '-:--</div>'
+      '                        <div class="crm-stat-lbl">S'#220'RE</div>'
+      '                    </div>'
+      '                    <div class="crm-stat-box">'
+      
+        '                        <div class="crm-stat-val" id="crmTries">' +
+        '-</div>'
+      '                        <div class="crm-stat-lbl">DENEME</div>'
+      '                    </div>'
+      '                    <div class="crm-stat-box">'
+      
+        '                        <div class="crm-stat-val" id="crmAvgTime' +
+        '"><i class="fa-solid fa-spinner fa-spin"></i></div>'
+      '                        <div class="crm-stat-lbl">ORTALAMA</div>'
+      '                    </div>'
+      '                    <div class="crm-stat-box">'
+      
+        '                        <div class="crm-stat-val" id="crmPercent' +
+        'ile"><i class="fa-solid fa-spinner fa-spin"></i></div>'
+      '                        <div class="crm-stat-lbl">Y'#220'ZDEL'#304'K</div>'
+      '                    </div>'
+      '                </div>'
+      ''
+      '                <div class="crm-answer-box">'
+      
+        '                    <div class="crm-answer-lbl">G'#220'N'#220'N CEVABI</di' +
+        'v>'
+      
+        '                    <div class="crm-answer-val" id="crmAnswerTex' +
+        't"><i class="fa-solid fa-spinner fa-spin"></i></div>'
+      '                </div>'
+      ''
+      
+        '                <button class="modal-save-btn" onclick="window.c' +
+        'loseResultModal()">KAPAT</button>'
+      '            </div>'
+      '        </div>'
       '    </div>'
       '</div>')
     Align = alClient

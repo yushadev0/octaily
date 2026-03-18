@@ -19,6 +19,8 @@ object NERDLE_FORM: TNERDLE_FORM
     'window.finalGrade = "";'
     'window.nerdleIsWin = false;'
     'window.currentPuzzleId = "";'
+    'window.isNerdleInitialized = false;'
+    'window.nerdleStartTimeStamp = 0;'
     ''
     'window.getVisibleViewport = function() {'
     '    var vps = document.querySelectorAll('#39'.nerdle-viewport'#39');'
@@ -36,46 +38,6 @@ object NERDLE_FORM: TNERDLE_FORM
       'window.nerdleEls = function(selector) { var vp = window.getVisib' +
       'leViewport(); return vp ? vp.querySelectorAll(selector) : []; };'
     ''
-    'window.injectOctailyStyles = function() {'
-    '    if (!document.getElementById("octailyGlobalStyle")) {'
-    '        var style = document.createElement("style");'
-    '        style.id = "octailyGlobalStyle";'
-    '        style.innerHTML = '
-    
-      '            ".swal2-container { z-index: 2147483647 !important; ' +
-      '} " +'
-    
-      '            ".oct-popup { background: #121213 !important; border' +
-      ': 1px solid #3a3a3c !important; color: #fff !important; border-r' +
-      'adius: 12px !important; } " +'
-    
-      '            ".oct-title { color: #fff !important; font-weight: 8' +
-      '00 !important; font-size: 1.4rem !important; margin-top: 10px !i' +
-      'mportant; letter-spacing: 1px !important; } " +'
-    
-      '            ".oct-content { color: #818384 !important; font-size' +
-      ': 1.1rem !important; margin-top: 15px !important; line-height: 1' +
-      '.6 !important; } " +'
-    
-      '            ".oct-confirm { background: #538d4e !important; colo' +
-      'r: #fff !important; font-weight: bold !important; padding: 12px ' +
-      '30px !important; border-radius: 6px !important; border: none !im' +
-      'portant; margin: 15px !important; cursor: pointer; font-family: ' +
-      'sans-serif; font-size: 1.1rem !important; } " +'
-    
-      '            ".oct-cancel { background: #3a3a3c !important; color' +
-      ': #fff !important; padding: 12px 25px !important; border-radius:' +
-      ' 6px !important; border: none !important; margin: 10px !importan' +
-      't; cursor: pointer; font-family: sans-serif; } " +'
-    
-      '            ".oct-icon { border: none !important; color: #b59f3b' +
-      ' !important; font-size: 2.5rem !important; display: flex !import' +
-      'ant; align-items: center !important; justify-content: center !im' +
-      'portant; margin: 10px auto !important; }";'
-    '        document.head.appendChild(style);'
-    '    }'
-    '};'
-    ''
     'window.getTodayStr = function() {'
     '    var d = new Date();'
     '    var m = (d.getMonth() + 1).toString().padStart(2, '#39'0'#39');'
@@ -84,34 +46,63 @@ object NERDLE_FORM: TNERDLE_FORM
     '};'
     ''
     'window.initNerdleWithServer = function(serverId) {'
-    '    window.nerdleGameOver = false;'
-    '    window.nerdleRow = 0;'
-    '    window.nerdleCol = 0;'
-    '    window.nerdleElapsedTime = 0;'
-    '    window.nerdleIsWin = false;'
-    '    window.finalGrade = "";'
-    ''
+    '    if (!window.nerdleGameOver) {'
+    '        window.nerdleRow = 0;'
+    '        window.nerdleCol = 0;'
+    '        window.nerdleElapsedTime = 0;'
+    '        window.nerdleIsWin = false;'
+    '        window.finalGrade = "";'
+    '    }'
     '    if (serverId && serverId !== "") {'
     '        window.currentPuzzleId = serverId;'
     '    } else {'
     '        window.currentPuzzleId = window.getTodayStr();'
     '    }'
+    '    window.isNerdleInitialized = true;'
     '    window.initNerdleBoard();'
+    '};'
+    ''
+    'window.initNerdleBoard = function() {'
+    
+      '    var boardEl = window.nerdleEl('#39'#nerdleBoard'#39') || document.ge' +
+      'tElementById('#39'nerdleBoard'#39');'
+    
+      '    if (!boardEl) { setTimeout(window.initNerdleBoard, 100); ret' +
+      'urn; }'
+    '    '
+    '    boardEl.innerHTML = '#39#39'; '
+    
+      '    for (var i = 0; i < (window.nerdleMaxGuesses * window.nerdle' +
+      'Length); i++) {'
+    '        var cell = document.createElement('#39'div'#39');'
+    '        cell.className = '#39'nerdle-cell'#39';'
+    '        boardEl.appendChild(cell);'
+    '    }'
+    '    if (!window.nerdleGameOver) {'
+    '        window.loadNerdleState();'
+    '    }'
     '};'
     ''
     'window.startNerdleTimer = function() {'
     
       '    if (window.nerdleTimerInterval) clearInterval(window.nerdleT' +
       'imerInterval);'
-    '    if (window.nerdleGameOver) return;'
     
-      '    var startTime = Date.now() - (window.nerdleElapsedTime * 100' +
-      '0);'
+      '    if (window.nerdleGameOver || !window.isNerdleInitialized) re' +
+      'turn;'
+    '    '
+    
+      '    if (!window.nerdleStartTimeStamp || window.nerdleStartTimeSt' +
+      'amp === 0) {'
+    
+      '        window.nerdleStartTimeStamp = Date.now() - (window.nerdl' +
+      'eElapsedTime * 1000);'
+    '    }'
     '    var timerEl = window.nerdleEl('#39'#nerdleTimer'#39');'
     '    window.nerdleTimerInterval = setInterval(function() {'
     
-      '        window.nerdleElapsedTime = Math.floor((Date.now() - star' +
-      'tTime) / 1000);'
+      '        window.nerdleElapsedTime = Math.floor((Date.now() - wind' +
+      'ow.nerdleStartTimeStamp) / 1000);'
     '        if (timerEl) {'
     
       '            var m = Math.floor(window.nerdleElapsedTime / 60).to' +
@@ -128,7 +119,9 @@ object NERDLE_FORM: TNERDLE_FORM
     '};'
     ''
     'window.saveNerdleState = function() {'
-    '    if (!window.getVisibleViewport()) return; '
+    
+      '    if (!window.isNerdleInitialized || !window.getVisibleViewpor' +
+      't()) return; '
     ''
     '    var state = {'
     '        puzzleId: window.currentPuzzleId,'
@@ -179,28 +172,8 @@ object NERDLE_FORM: TNERDLE_FORM
       'state));'
     '};'
     ''
-    'window.initNerdleBoard = function() {'
-    '    window.injectOctailyStyles();'
-    
-      '    var boardEl = window.nerdleEl('#39'#nerdleBoard'#39') || document.ge' +
-      'tElementById('#39'nerdleBoard'#39');'
-    
-      '    if (!boardEl) { setTimeout(window.initNerdleBoard, 100); ret' +
-      'urn; }'
-    '    '
-    '    boardEl.innerHTML = '#39#39'; '
-    '    '
-    
-      '    for (var i = 0; i < (window.nerdleMaxGuesses * window.nerdle' +
-      'Length); i++) {'
-    '        var cell = document.createElement('#39'div'#39');'
-    '        cell.className = '#39'nerdle-cell'#39';'
-    '        boardEl.appendChild(cell);'
-    '    }'
-    '    window.loadNerdleState();'
-    '};'
-    ''
     'window.loadNerdleState = function() {'
+    '    if (!window.isNerdleInitialized) return;'
     '    var saved = localStorage.getItem('#39'octaily_nerdle_state'#39');'
     '    if (saved) {'
     '        try {'
@@ -295,17 +268,24 @@ object NERDLE_FORM: TNERDLE_FORM
     '    return '#39'D'#39';'
     '};'
     ''
-    'window.showNerdleGameOver = function(isReplay) {'
+    
+      'window.showNerdleGameOver = function(isReplay, savedTries, saved' +
+      'Time, savedIsWin) {'
     
       '    if (window.nerdleTimerInterval) clearInterval(window.nerdleT' +
       'imerInterval);'
     ''
-    '    var time = window.nerdleElapsedTime;'
-    '    var tries = window.nerdleRow;'
-    '    var isWin = window.nerdleIsWin;'
     
-      '    var grade = isReplay ? window.finalGrade : window.calculateG' +
-      'rade(tries, isWin);'
+      '    var time = (isReplay && savedTime !== undefined) ? savedTime' +
+      ' : window.nerdleElapsedTime;'
+    
+      '    var tries = (isReplay && savedTries !== undefined) ? savedTr' +
+      'ies : window.nerdleRow;'
+    
+      '    var isWin = (isReplay && savedIsWin !== undefined) ? savedIs' +
+      'Win : window.nerdleIsWin;'
+    ''
+    '    var grade = window.calculateGrade(tries, isWin);'
     ''
     '    var m = Math.floor(time / 60).toString().padStart(2, '#39'0'#39');'
     '    var s = (time % 60).toString().padStart(2, '#39'0'#39');'
@@ -316,7 +296,6 @@ object NERDLE_FORM: TNERDLE_FORM
     '        window.finalGrade = grade;'
     '        window.saveNerdleState();'
     ''
-    '        '
     '        if (typeof ajaxRequest !== '#39'undefined'#39') {'
     '            ajaxRequest(NERDLE_FORM.NerdleHTML, '#39'GameOver'#39', ['
     '                '#39'time='#39' + time, '
@@ -336,66 +315,94 @@ object NERDLE_FORM: TNERDLE_FORM
     
       '    var modalTitle = isReplay ? '#39'G'#220'N'#220'N '#214'ZET'#304#39' : (isWin ? '#39'TEBR'#304'K' +
       'LER!'#39' : '#39'YARIN Y'#304'NE DENE!'#39');'
+    '    '
+    '    document.getElementById('#39'crmTitle'#39').innerText = modalTitle;'
     
-      '    var subText = isReplay ? '#39'<div style="color:#818384; font-si' +
-      'ze:0.95rem; margin-bottom:20px;">Bug'#252'n'#252'n denklemini zaten '#231#246'zd'#252'n' +
-      '!</div>'#39' : '#39#39';'
+      '    document.getElementById('#39'crmTitle'#39').style.color = isWin ? '#39'#' +
+      'fff'#39' : (isReplay ? '#39'#fff'#39' : '#39'#e74c3c'#39');'
+    '    '
+    '    var subTextEl = document.getElementById('#39'crmSubText'#39');'
+    '    if (isReplay) {'
     
-      '    var modalIcon = isReplay ? '#39'info'#39' : (isWin ? '#39'success'#39' : '#39'er' +
-      'ror'#39');'
-    '    var triesStr = isWin ? tries + '#39'/6'#39' : '#39'X/6'#39';'
-    ''
-    '    var htmlContent = subText +'
-    
-      '        '#39'<div style="display:flex; justify-content:space-around;' +
-      ' align-items:center; margin-top:10px;">'#39' +'
-    '            '#39'<div style="text-align:center;">'#39' +'
-    
-      '                '#39'<div style="font-size:3rem; font-weight:900; co' +
-      'lor:'#39' + gradeColor + '#39';">'#39' + grade + '#39'</div>'#39' +'
-    
-      '                '#39'<div style="font-size:0.9rem; color:#818384; le' +
-      'tter-spacing:1px;">DERECE</div>'#39' +'
-    '            '#39'</div>'#39' +'
-    '            '#39'<div style="text-align:center;">'#39' +'
-    
-      '                '#39'<div style="font-size:2rem; font-weight:bold; c' +
-      'olor:#fff; line-height:3rem;">'#39' + timeStr + '#39'</div>'#39' +'
-    
-      '                '#39'<div style="font-size:0.9rem; color:#818384; le' +
-      'tter-spacing:1px;">S'#220'RE</div>'#39' +'
-    '            '#39'</div>'#39' +'
-    '            '#39'<div style="text-align:center;">'#39' +'
-    
-      '                '#39'<div style="font-size:2rem; font-weight:bold; c' +
-      'olor:#fff; line-height:3rem;">'#39' + triesStr + '#39'</div>'#39' +'
-    
-      '                '#39'<div style="font-size:0.9rem; color:#818384; le' +
-      'tter-spacing:1px;">DENEME</div>'#39' +'
-    '            '#39'</div>'#39' +'
-    '        '#39'</div>'#39';'
-    ''
-    
-      '    var mySwal = (typeof Swal !== '#39'undefined'#39') ? Swal : (window.' +
-      'parent && window.parent.Swal ? window.parent.Swal : null);'
-    '    if (mySwal) {'
-    '        mySwal.fire({'
-    
-      '            target: window.getVisibleViewport() || document.body' +
-      ','
-    
-      '            title: modalTitle, html: htmlContent, icon: modalIco' +
-      'n, confirmButtonText: '#39#199'IK'#39', background: '#39'#1a1a1b'#39', color: '#39'#fff' +
-      'fff'#39','
-    
-      '            customClass: { popup: '#39'oct-popup'#39', title: '#39'oct-title' +
-      #39', confirmButton: '#39'oct-confirm'#39', icon: '#39'oct-icon'#39' },'
-    
-      '            didOpen: function() { var container = document.query' +
-      'Selector('#39'.swal2-container'#39'); if (container) container.style.zIn' +
-      'dex = "2147483647"; }'
-    '        }); '
+      '        subTextEl.innerHTML = '#39'Bug'#252'n'#252'n denklemini zaten '#231#246'zd'#252'n!'#39 +
+      ';'
+    '        subTextEl.style.display = '#39'block'#39';'
+    '    } else {'
+    '        subTextEl.style.display = '#39'none'#39';'
     '    }'
+    ''
+    '    var bigGrade = document.getElementById('#39'crmBigGrade'#39');'
+    '    bigGrade.innerText = grade;'
+    '    bigGrade.style.color = gradeColor;'
+    '    bigGrade.style.textShadow = '#39'0 0 20px '#39' + gradeColor + '#39'60'#39';'
+    '    '
+    '    var divider = document.getElementById('#39'crmDivider'#39');'
+    '    if (divider) {'
+    '        divider.style.backgroundColor = gradeColor;'
+    
+      '        divider.style.boxShadow = '#39'0 0 12px '#39' + gradeColor + '#39'80' +
+      #39';'
+    '    }'
+    ''
+    '    document.getElementById('#39'crmTime'#39').innerText = timeStr;'
+    '    var triesStr = isWin ? tries + '#39'/6'#39' : '#39'X/6'#39';'
+    '    if (isReplay && tries === 0 && !isWin) { triesStr = '#39'-/6'#39'; }'
+    '    document.getElementById('#39'crmTries'#39').innerText = triesStr;'
+    ''
+    
+      '    document.getElementById('#39'crmAvgTime'#39').innerHTML = '#39'<i class=' +
+      '"fa-solid fa-spinner fa-spin"></i>'#39';'
+    
+      '    document.getElementById('#39'crmPercentile'#39').innerHTML = '#39'<i cla' +
+      'ss="fa-solid fa-spinner fa-spin"></i>'#39';'
+    
+      '    document.getElementById('#39'crmAnswerText'#39').innerHTML = '#39'<i cla' +
+      'ss="fa-solid fa-spinner fa-spin"></i>'#39';'
+    ''
+    
+      '    document.getElementById('#39'customResultModal'#39').classList.add('#39 +
+      'active'#39');'
+    ''
+    '    setTimeout(function() {'
+    '        if (typeof ajaxRequest !== '#39'undefined'#39') {'
+    
+      '            ajaxRequest(NERDLE_FORM.NerdleHTML, '#39'GetPanelStats'#39',' +
+      ' ['#39'game_type=nerdle'#39']);'
+    '        }'
+    '    }, isReplay ? 0 : 400);'
+    '};'
+    ''
+    
+      'window.updatePanelStats = function(avgTimeSec, percentile, answe' +
+      'rText) {'
+    
+      '    var m = Math.floor(avgTimeSec / 60).toString().padStart(2, '#39 +
+      '0'#39');'
+    '    var s = (avgTimeSec % 60).toString().padStart(2, '#39'0'#39');'
+    
+      '    document.getElementById('#39'crmAvgTime'#39').innerText = (avgTimeSe' +
+      'c > 0) ? (m + '#39':'#39' + s) : '#39'--:--'#39';'
+    
+      '    document.getElementById('#39'crmPercentile'#39').innerText = '#39'%'#39' + p' +
+      'ercentile;'
+    '    '
+    '    if (answerText) {'
+    
+      '        document.getElementById('#39'crmAnswerText'#39').innerText = ans' +
+      'werText;'
+    '    } else {'
+    
+      '        document.getElementById('#39'crmAnswerText'#39').innerText = "G'#304 +
+      'ZL'#304'";'
+    '    }'
+    '};'
+    ''
+    'window.closeResultModal = function() {'
+    '    var modal = document.getElementById('#39'customResultModal'#39');'
+    '    if(modal) modal.classList.remove('#39'active'#39');'
+    
+      '    if (typeof ajaxRequest !== '#39'undefined'#39') ajaxRequest(NERDLE_F' +
+      'ORM.NerdleHTML, '#39'closePage'#39');'
     '};'
     ''
     
@@ -409,7 +416,9 @@ object NERDLE_FORM: TNERDLE_FORM
     '};'
     ''
     'window.addLetter = function(letter) {'
-    '    if (window.nerdleGameOver) return;'
+    
+      '    if (window.nerdleGameOver || !window.isNerdleInitialized) re' +
+      'turn;'
     
       '    if (window.nerdleCol < window.nerdleLength && window.nerdleR' +
       'ow < window.nerdleMaxGuesses) {'
@@ -425,7 +434,9 @@ object NERDLE_FORM: TNERDLE_FORM
     '};'
     ''
     'window.deleteLetter = function() {'
-    '    if (window.nerdleGameOver) return;'
+    
+      '    if (window.nerdleGameOver || !window.isNerdleInitialized) re' +
+      'turn;'
     '    if (window.nerdleCol > 0) {'
     '        window.nerdleCol--;'
     
@@ -440,7 +451,9 @@ object NERDLE_FORM: TNERDLE_FORM
     '};'
     ''
     'window.submitGuess = function() {'
-    '    if (window.nerdleGameOver) return;'
+    
+      '    if (window.nerdleGameOver || !window.isNerdleInitialized) re' +
+      'turn;'
     '    if (window.nerdleCol !== window.nerdleLength) {'
     '        for (var i = 0; i < window.nerdleCol; i++) {'
     '            var cell = window.getCell(window.nerdleRow, i);'
@@ -463,7 +476,9 @@ object NERDLE_FORM: TNERDLE_FORM
     '};'
     ''
     'window.handleInput = function(key) {'
-    '    if (window.nerdleGameOver) return;'
+    
+      '    if (window.nerdleGameOver || !window.isNerdleInitialized) re' +
+      'turn;'
     '    if (key === '#39'BACKSPACE'#39') window.deleteLetter();'
     '    else if (key === '#39'ENTER'#39') window.submitGuess();'
     
@@ -519,19 +534,6 @@ object NERDLE_FORM: TNERDLE_FORM
     '};'
     ''
     'window.showNerdleError = function(errorMsg) {'
-    
-      '    var mySwal = (typeof Swal !== '#39'undefined'#39') ? Swal : (window.' +
-      'parent && window.parent.Swal ? window.parent.Swal : null);'
-    '    if (mySwal && errorMsg) {'
-    '        mySwal.fire({'
-    
-      '            target: window.getVisibleViewport() || document.body' +
-      ', title: '#39'HATA!'#39', text: errorMsg, icon: '#39'warning'#39', toast: true, ' +
-      'position: '#39'top'#39', showConfirmButton: false, timer: 2500, backgrou' +
-      'nd: '#39'#1a1a1b'#39', color: '#39'#ffffff'#39', customClass: { popup: '#39'oct-popu' +
-      'p'#39' }'
-    '        });'
-    '    }'
     '    for (var i = 0; i < window.nerdleLength; i++) {'
     '        var cell = window.getCell(window.nerdleRow, i);'
     '        if (cell) {'
@@ -585,137 +587,75 @@ object NERDLE_FORM: TNERDLE_FORM
     Hint = ''
     HTML.Strings = (
       '<style>'
-      '    /* ========================================='
-      '       S'#304'STEM RESET & SCROLL K'#304'L'#304'D'#304' (iOS & Android)'
-      '       ========================================= */'
       '    html, body {'
-      '        margin: 0 !important;'
-      '        padding: 0 !important;'
-      '        width: 100% !important;'
-      '        height: 100% !important;'
-      '        background-color: #121213 !important;'
-      '        overflow: hidden !important;'
-      '        overscroll-behavior: none !important;'
-      '        touch-action: none !important;'
-      '        -webkit-border-radius: 0 !important;'
-      '        border-radius: 0 !important;'
-      '        -webkit-appearance: none !important;'
-      '        appearance: none !important;'
+      
+        '        margin: 0 !important; padding: 0 !important; width: 100%' +
+        ' !important; height: 100% !important;'
+      
+        '        background-color: #121213 !important; overflow: hidden !' +
+        'important; overscroll-behavior: none !important; touch-action: n' +
+        'one !important;'
+      
+        '        -webkit-border-radius: 0 !important; border-radius: 0 !i' +
+        'mportant; -webkit-appearance: none !important; appearance: none ' +
+        '!important;'
       '    }'
       ''
-      '    /* ========================================='
-      '       GENEL TASARIM VE V'#304'EWPORT'
-      '       ========================================= */'
       '    .nerdle-viewport {'
-      '        position: fixed;'
-      
-        '        top: 0; left: 0; right: 0; bottom: 0; /* iOS iframe soru' +
-        'nlar'#305'n'#305' '#231#246'zer */'
+      '        position: fixed; top: 0; left: 0; right: 0; bottom: 0; '
       '        width: 100vw; height: 100vh; height: 100dvh;'
-      '        background-color: #121213 !important;'
       
-        '        display: flex; flex-direction: column; align-items: cent' +
-        'er;'
+        '        background-color: #121213 !important; display: flex; fle' +
+        'x-direction: column; align-items: center;'
       
         '        font-family: '#39'Segoe UI'#39', Tahoma, Geneva, Verdana, sans-s' +
-        'erif;'
-      '        color: #ffffff;'
-      '        z-index: 9999;'
-      '        overflow: hidden;'
-      '        padding-top: env(safe-area-inset-top);'
-      '        padding-bottom: env(safe-area-inset-bottom);'
-      '        box-sizing: border-box;'
-      '        overscroll-behavior: none;'
-      '        touch-action: none;'
-      '        -webkit-border-radius: 0 !important;'
-      '        border-radius: 0 !important;'
-      '        '
-      '        /* iOS GR'#304' K'#214#350'E SIZINTISI '#304#199#304'N KES'#304'N '#199#214'Z'#220'MLER */'
-      '        box-shadow: 0 0 0 100vmax #121213; '
-      '        clip-path: inset(0); '
+        'erif; color: #ffffff; z-index: 9999; overflow: hidden;'
+      
+        '        padding-top: env(safe-area-inset-top); padding-bottom: e' +
+        'nv(safe-area-inset-bottom); box-sizing: border-box;'
+      '        box-shadow: 0 0 0 100vmax #121213; clip-path: inset(0); '
       '    }'
       ''
-      '    /* ========================================='
-      '       '#220'ST BA'#350'LIK VE KRONOMETRE'
-      '       ========================================= */'
-      '    .nerdle-header {'
-      '        width: 100%; max-width: 600px;'
       
-        '        display: flex; justify-content: space-between; align-ite' +
-        'ms: center;'
-      '        padding: 10px 15px; border-bottom: 1px solid #3a3a3c;'
-      '        box-sizing: border-box;'
-      '        background-color: #121213;'
-      '    }'
+        '    .nerdle-header { width: 100%; max-width: 600px; display: fle' +
+        'x; justify-content: space-between; align-items: center; padding:' +
+        ' 10px 15px; border-bottom: 1px solid #3a3a3c; box-sizing: border' +
+        '-box; background-color: #121213; }'
+      
+        '    .nerdle-header h1 { margin: 0; font-size: 1.5rem; letter-spa' +
+        'cing: 2px; font-weight: 800; text-align: center; }'
+      
+        '    .btn-back { background: none; border: none; color: #818384; ' +
+        'font-size: 1.4rem; cursor: pointer; transition: color 0.2s; padd' +
+        'ing: 5px; -webkit-tap-highlight-color: transparent; }'
+      
+        '    .nerdle-timer { font-family: '#39'Courier New'#39', Courier, monospa' +
+        'ce; color: #818384; font-size: 1.2rem; font-weight: bold; width:' +
+        ' 60px; text-align: right; }'
       ''
-      '    .nerdle-header h1 {'
       
-        '        margin: 0; font-size: 1.5rem; letter-spacing: 2px; font-' +
-        'weight: 800; text-align: center;'
-      '    }'
-      ''
-      '    .btn-back {'
+        '    .nerdle-board-container { flex-grow: 1; display: flex; justi' +
+        'fy-content: center; align-items: center; width: 100%; padding: 1' +
+        '0px; box-sizing: border-box; min-height: 0; background-color: #1' +
+        '21213; }'
       
-        '        background: none; border: none; color: #818384; font-siz' +
-        'e: 1.4rem;'
-      '        cursor: pointer; transition: color 0.2s; padding: 5px;'
-      '        -webkit-tap-highlight-color: transparent;'
-      '    }'
-      ''
-      '    .nerdle-timer {'
-      '        font-family: '#39'Courier New'#39', Courier, monospace;'
+        '    .nerdle-board { display: grid; grid-template-rows: repeat(6,' +
+        ' 1fr); grid-template-columns: repeat(8, 1fr); gap: 6px; width: 1' +
+        '00%; max-width: 520px; aspect-ratio: 8 / 6; }'
       
-        '        color: #818384; font-size: 1.2rem; font-weight: bold; wi' +
-        'dth: 60px; text-align: right;'
-      '    }'
-      ''
-      '    /* ========================================='
-      '       OYUN ALANI (Esnek Grid Yap'#305's'#305' - 8 S'#252'tun)'
-      '       ========================================= */'
-      '    .nerdle-board-container {'
-      
-        '        flex-grow: 1; display: flex; justify-content: center; al' +
-        'ign-items: center;'
-      
-        '        width: 100%; padding: 10px; box-sizing: border-box; min-' +
-        'height: 0;'
-      '        background-color: #121213;'
-      '    }'
-      ''
-      '    .nerdle-board {'
-      '        display: grid;'
-      '        grid-template-rows: repeat(6, 1fr);'
-      '        grid-template-columns: repeat(8, 1fr);'
-      '        gap: 6px;'
-      '        width: 100%; '
-      '        max-width: 520px; '
-      
-        '        aspect-ratio: 8 / 6; /* Y'#252'kseklik/Geni'#351'lik oran'#305'n'#305' h'#252'cre' +
-        'lerin kare olmas'#305'n'#305' sa'#287'layacak '#351'ekilde kilitler */'
-      '    }'
-      ''
-      '    .nerdle-cell {'
-      '        width: 100%; height: 100%;'
-      '        border: 2px solid #3a3a3c;'
-      
-        '        display: flex; justify-content: center; align-items: cen' +
-        'ter;'
-      '        font-size: 2.2rem; '
-      '        font-weight: bold;'
-      '        box-sizing: border-box; user-select: none;'
-      
-        '        transition: transform 0.1s, background-color 0.4s, borde' +
-        'r-color 0.4s;'
-      '        -webkit-tap-highlight-color: transparent;'
-      '    }'
-      ''
+        '    .nerdle-cell { width: 100%; height: 100%; border: 2px solid ' +
+        '#3a3a3c; display: flex; justify-content: center; align-items: ce' +
+        'nter; font-size: 2.2rem; font-weight: bold; box-sizing: border-b' +
+        'ox; user-select: none; transition: transform 0.1s, background-co' +
+        'lor 0.4s, border-color 0.4s; -webkit-tap-highlight-color: transp' +
+        'arent; }'
       '    .nerdle-cell.filled { border-color: #565758; }'
       
         '    .nerdle-cell.correct { background-color: #538d4e; border-col' +
         'or: #538d4e; }'
       
         '    .nerdle-cell.present { background-color: #90306A; border-col' +
-        'or: #90306A; } /* Nerdle '#214'zel Rengi */'
+        'or: #90306A; } '
       
         '    .nerdle-cell.absent { background-color: #3a3a3c; border-colo' +
         'r: #3a3a3c; }'
@@ -723,114 +663,171 @@ object NERDLE_FORM: TNERDLE_FORM
         '    .nerdle-cell.error { background-color: #e74c3c !important; b' +
         'order-color: #e74c3c !important; color: #fff !important; }'
       ''
-      '    /* ========================================='
-      '       KLAVYE (Numpad + Operat'#246'rler)'
-      '       ========================================= */'
-      '    .nerdle-keyboard {'
-      '        width: 100%; max-width: 600px;'
-      '        padding: 0 8px 20px 8px; box-sizing: border-box;'
-      '        background-color: #121213;'
-      '    }'
-      ''
-      '    .keyboard-row {'
       
-        '        display: flex; justify-content: center; width: 100%; mar' +
-        'gin-bottom: 6px; gap: 4px;'
-      '        box-sizing: border-box;'
-      '    }'
-      ''
-      '    .key {'
-      '        background-color: #818384; color: #ffffff;'
-      '        border: none; border-radius: 4px; height: 55px;'
-      '        font-size: 1.3rem; font-weight: bold;'
+        '    .nerdle-keyboard { width: 100%; max-width: 600px; padding: 0' +
+        ' 8px 20px 8px; box-sizing: border-box; background-color: #121213' +
+        '; }'
       
-        '        display: flex; justify-content: center; align-items: cen' +
-        'ter;'
+        '    .keyboard-row { display: flex; justify-content: center; widt' +
+        'h: 100%; margin-bottom: 6px; gap: 4px; box-sizing: border-box; }'
       
-        '        cursor: pointer; user-select: none; flex: 1; max-width: ' +
-        '45px;'
-      '        transition: transform 0.1s, background-color 0.1s;'
-      '        -webkit-tap-highlight-color: transparent;'
-      '    }'
-      ''
+        '    .key { background-color: #818384; color: #ffffff; border: no' +
+        'ne; border-radius: 4px; height: 55px; font-size: 1.3rem; font-we' +
+        'ight: bold; display: flex; justify-content: center; align-items:' +
+        ' center; cursor: pointer; user-select: none; flex: 1; max-width:' +
+        ' 45px; transition: transform 0.1s, background-color 0.1s; -webki' +
+        't-tap-highlight-color: transparent; }'
       '    .key.wide { flex: 1.5; max-width: 80px; font-size: 1.1rem; }'
       '    .key:active { transform: scale(0.92); }'
       '    .key.correct { background-color: #538d4e; }'
       '    .key.present { background-color: #90306A; }'
       '    .key.absent { background-color: #3a3a3c; }'
       ''
-      '    @keyframes shake {'
-      '        10%, 90% { transform: translate3d(-2px, 0, 0); }'
-      '        20%, 80% { transform: translate3d(4px, 0, 0); }'
-      '        30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }'
-      '        40%, 60% { transform: translate3d(6px, 0, 0); }'
-      '    }'
+      '    /* CUSTOM SONU'#199' PANEL'#304' CSS'#39'LER'#304' */'
+      
+        '    .oct-modal-overlay { position: fixed; top: 0; left: 0; width' +
+        ': 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-' +
+        'filter: blur(8px); display: flex; justify-content: center; align' +
+        '-items: center; z-index: 11000; opacity: 0; visibility: hidden; ' +
+        'transition: opacity 0.3s ease, visibility 0.3s ease; padding: 15' +
+        'px; box-sizing: border-box; }'
+      
+        '    .oct-modal-overlay.active { opacity: 1; visibility: visible;' +
+        ' }'
+      
+        '    .oct-modal-content { background: #161618; width: 100%; max-w' +
+        'idth: 350px; border-radius: 16px; border: 1px solid #333; displa' +
+        'y: flex; flex-direction: column; text-align: center; overflow: h' +
+        'idden; opacity: 0; max-height: 92vh; }'
+      
+        '    .oct-modal-overlay.active .oct-modal-content { animation: sw' +
+        'alPopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }'
+      
+        '    .modal-header { padding: 18px 20px; background: #1a1a1c; dis' +
+        'play: flex; justify-content: center; align-items: center; border' +
+        '-bottom: 1px solid #2a2a2c; position: relative; flex-shrink: 0; ' +
+        '}'
+      
+        '    .modal-header h2 { margin: 0; font-size: 1.2rem; color: #fff' +
+        '; font-weight: 800; letter-spacing: 1.5px; text-transform: upper' +
+        'case; }'
+      
+        '    .modal-body { padding: 15px 20px; display: flex; flex-direct' +
+        'ion: column; align-items: center; overflow-y: auto; touch-action' +
+        ': pan-y; -webkit-overflow-scrolling: touch; overscroll-behavior:' +
+        ' contain; flex-grow: 1; }'
+      
+        '    .crm-subtext { color: #818384; font-size: 0.85rem; margin-bo' +
+        'ttom: 12px; display: none; }'
+      
+        '    .crm-grade-section { margin: 5px auto 10px auto; display: fl' +
+        'ex; flex-direction: column; align-items: center; width: 100%; fl' +
+        'ex-shrink: 0; opacity: 0; }'
+      
+        '    .oct-modal-overlay.active .crm-grade-section { animation: gr' +
+        'adeSectionIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s forward' +
+        's; }'
+      
+        '    .crm-grade-label { font-size: 0.75rem; color: #818384; font-' +
+        'weight: bold; letter-spacing: 2px; margin-bottom: 2px; text-tran' +
+        'sform: uppercase; }'
+      
+        '    .crm-grade-value { font-size: 4.5rem; font-weight: 900; line' +
+        '-height: 1.1; position: relative; margin-bottom: 12px; transitio' +
+        'n: text-shadow 0.3s ease; }'
+      
+        '    .crm-divider { width: 100%; height: 2px; border-radius: 2px;' +
+        ' background-color: #3a3a3c; margin-bottom: 20px; opacity: 0; tra' +
+        'nsition: background-color 0.3s ease, box-shadow 0.3s ease; }'
+      
+        '    .oct-modal-overlay.active .crm-divider { animation: fadeIn 0' +
+        '.5s ease 0.4s forwards; }'
+      
+        '    .crm-stats-grid { display: grid; grid-template-columns: 1fr ' +
+        '1fr; gap: 12px; margin-bottom: 18px; width: 100%; }'
+      
+        '    .crm-stat-box { background: #1a1a1c; border: 1px solid #2a2a' +
+        '2c; border-radius: 12px; padding: 12px 5px; display: flex; flex-' +
+        'direction: column; align-items: center; justify-content: center;' +
+        ' }'
+      
+        '    .crm-stat-val { font-size: 1.4rem; font-weight: bold; color:' +
+        ' #fff; margin-bottom: 2px; font-variant-numeric: tabular-nums; l' +
+        'ine-height: 1.2; }'
+      
+        '    .crm-stat-lbl { font-size: 0.7rem; color: #818384; font-weig' +
+        'ht: bold; letter-spacing: 1px; text-transform: uppercase; }'
+      '    '
+      
+        '    .crm-answer-box { background: rgba(83, 141, 78, 0.1); border' +
+        ': 1px dashed #538d4e; border-radius: 12px; padding: 12px; margin' +
+        '-bottom: 20px; width: 100%; box-sizing: border-box; }'
+      
+        '    .crm-answer-lbl { font-size: 0.75rem; color: #538d4e; font-w' +
+        'eight: bold; letter-spacing: 1px; margin-bottom: 4px; }'
+      
+        '    .crm-answer-val { font-size: 1.5rem; color: #fff; font-weigh' +
+        't: 800; letter-spacing: 3px; word-break: break-all; line-height:' +
+        ' 1.4; }'
+      ''
+      
+        '    .modal-save-btn { width: 100%; background: #538d4e; color: #' +
+        'fff; border: none; padding: 16px; border-radius: 12px; font-weig' +
+        'ht: 800; font-size: 1rem; cursor: pointer; transition: 0.3s; fle' +
+        'x-shrink: 0; text-transform: uppercase; letter-spacing: 1px; }'
+      ''
+      
+        '    @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0' +
+        ', 0); } 20%, 80% { transform: translate3d(4px, 0, 0); } 30%, 50%' +
+        ', 70% { transform: translate3d(-6px, 0, 0); } 40%, 60% { transfo' +
+        'rm: translate3d(6px, 0, 0); } }'
       
         '    .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97)' +
         ' both; }'
+      
+        '    @keyframes swalPopIn { 0% { opacity: 0; transform: scale(0.8' +
+        '); } 80% { transform: scale(1.05); opacity: 1; } 100% { transfor' +
+        'm: scale(1); opacity: 1; } }'
+      
+        '    @keyframes gradeSectionIn { 0% { opacity: 0; transform: scal' +
+        'e(0.5) translateY(20px); } 100% { opacity: 1; transform: scale(1' +
+        ') translateY(0); } }'
+      
+        '    @keyframes fadeIn { 0% { opacity: 0; } 100% { opacity: 1; } ' +
+        '}'
       ''
-      '    /* ========================================='
-      '       MASA'#220'ST'#220' HOVER'
-      '       ========================================= */'
-      '    @media (hover: hover) and (pointer: fine) {'
-      '        .btn-back:hover { color: #ffffff; }'
-      '        .key:hover { opacity: 0.85; }'
-      '    }'
+      
+        '    @media (hover: hover) and (pointer: fine) { .btn-back:hover ' +
+        '{ color: #ffffff; } .key:hover { opacity: 0.85; } .modal-save-bt' +
+        'n:hover { background-color: #467a42; } }'
       ''
-      '    /* ========================================='
-      '       MOB'#304'L UYUMLULUK KATI KURALLARI'
-      '       ========================================= */'
       '    @media (max-width: 500px) {'
       '        .nerdle-header { padding: 8px 10px; }'
       '        .nerdle-header h1 { font-size: 1.3rem; }'
       '        .btn-back { font-size: 1.25rem; }'
-      '        '
       '        .nerdle-board-container { padding: 5px; }'
+      
+        '        .nerdle-board { max-width: 100vw; gap: 4px; padding: 0 5' +
+        'px; box-sizing: border-box; }'
+      '        .nerdle-cell { font-size: 1.5rem; border-width: 1.5px; }'
+      
+        '        .nerdle-keyboard { padding: 0 4px 10px 4px; max-width: 1' +
+        '00vw; }'
+      
+        '        .keyboard-row { gap: 3px; margin-bottom: 5px; width: 100' +
+        '%; }'
+      
+        '        .key { height: 48px; font-size: 1.15rem; max-width: none' +
+        '; flex: 1 1 0; padding: 0; margin: 0; }'
+      '        .key.wide { font-size: 0.85rem; flex: 1.5 1 0; }'
       '        '
       
-        '        /* 8 S'#252'tunlu Grid'#39'i ekrana s'#305#287'd'#305'rmak i'#231'in '#246'zel ayarlar *' +
-        '/'
-      '        .nerdle-board { '
-      '            max-width: 100vw; '
-      '            gap: 4px; '
-      '            padding: 0 5px; '
-      '            box-sizing: border-box;'
-      '        }'
-      '        '
-      '        /* '#199'er'#231'eveler inceltildi ve fontlar k'#252#231#252'lt'#252'ld'#252' */'
-      '        .nerdle-cell { '
-      '            font-size: 1.5rem; '
-      '            border-width: 1.5px; '
-      '        }'
-      '        '
-      '        .nerdle-keyboard { '
-      '            padding: 0 4px 10px 4px; '
-      '            max-width: 100vw; '
-      '        }'
-      '        .keyboard-row { '
-      '            gap: 3px; '
-      '            margin-bottom: 5px; '
-      '            width: 100%; '
-      '        }'
-      '        '
-      '        /* Klavye ta'#351'mas'#305'n'#305' '#246'nleyen kesin kurallar */'
-      '        .key { '
-      '            height: 48px; '
-      '            font-size: 1.15rem; '
-      '            max-width: none; '
-      '            flex: 1 1 0; '
-      '            padding: 0;'
-      '            margin: 0;'
-      '        }'
-      '        .key.wide { '
-      '            font-size: 0.85rem; '
-      '            flex: 1.5 1 0; '
-      '        }'
+        '        .modal-body { justify-content: flex-start; padding-botto' +
+        'm: 10px; }'
+      '        .crm-stats-grid { margin-top: auto; } '
+      '        .oct-modal-content { height: auto; min-height: 450px; }'
       '    }'
       ''
-      
-        '    /* '#199'ok k'#252#231#252'k ekranlar (iPhone SE, Galaxy Fold D'#305#351' Ekran vb.)' +
-        ' */'
       '    @media (max-width: 360px) {'
       '        .nerdle-board { gap: 3px; }'
       '        .nerdle-cell { font-size: 1.25rem; }'
@@ -876,6 +873,68 @@ object NERDLE_FORM: TNERDLE_FORM
       
         '            <div class="key wide" id="keyBackspace" data-key="BA' +
         'CKSPACE"><i class="fa-solid fa-delete-left"></i></div>'
+      '        </div>'
+      '    </div>'
+      ''
+      '    <div class="oct-modal-overlay" id="customResultModal">'
+      '        <div class="oct-modal-content">'
+      '            <div class="modal-header">'
+      '                <h2 id="crmTitle">TEBR'#304'KLER!</h2>'
+      '            </div>'
+      '            '
+      '            <div class="modal-body">'
+      '                <div id="crmSubText" class="crm-subtext"></div>'
+      '                '
+      '                <div class="crm-grade-section">'
+      '                    <div class="crm-grade-label">DERECE</div>'
+      
+        '                    <div class="crm-grade-value" id="crmBigGrade' +
+        '">S+</div>'
+      
+        '                    <div class="crm-divider" id="crmDivider"></d' +
+        'iv>'
+      '                </div>'
+      ''
+      '                <div class="crm-stats-grid">'
+      '                    <div class="crm-stat-box">'
+      
+        '                        <div class="crm-stat-val" id="crmTime">-' +
+        '-:--</div>'
+      '                        <div class="crm-stat-lbl">S'#220'RE</div>'
+      '                    </div>'
+      '                    <div class="crm-stat-box">'
+      
+        '                        <div class="crm-stat-val" id="crmTries">' +
+        '-</div>'
+      '                        <div class="crm-stat-lbl">DENEME</div>'
+      '                    </div>'
+      '                    <div class="crm-stat-box">'
+      
+        '                        <div class="crm-stat-val" id="crmAvgTime' +
+        '"><i class="fa-solid fa-spinner fa-spin"></i></div>'
+      '                        <div class="crm-stat-lbl">ORTALAMA</div>'
+      '                    </div>'
+      '                    <div class="crm-stat-box">'
+      
+        '                        <div class="crm-stat-val" id="crmPercent' +
+        'ile"><i class="fa-solid fa-spinner fa-spin"></i></div>'
+      '                        <div class="crm-stat-lbl">Y'#220'ZDEL'#304'K</div>'
+      '                    </div>'
+      '                </div>'
+      ''
+      '                <div class="crm-answer-box">'
+      
+        '                    <div class="crm-answer-lbl">G'#220'N'#220'N CEVABI</di' +
+        'v>'
+      
+        '                    <div class="crm-answer-val" id="crmAnswerTex' +
+        't"><i class="fa-solid fa-spinner fa-spin"></i></div>'
+      '                </div>'
+      ''
+      
+        '                <button class="modal-save-btn" onclick="window.c' +
+        'loseResultModal()">KAPAT</button>'
+      '            </div>'
       '        </div>'
       '    </div>'
       '</div>')

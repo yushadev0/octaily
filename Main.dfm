@@ -611,9 +611,10 @@ object MainForm: TMainForm
         'ccent-color); border-radius: 8px; border: 2px solid #121213; }'
       '   '
       '   .octaily-viewport {'
+      '       position: fixed; top: 0; left: 0; width: 100vw; '
       
-        '       position: fixed; top: 0; left: 0; width: 100vw; height: 1' +
-        '00vh;'
+        '       height: 100vh; height: 100dvh; /* YEN'#304' EKLEND'#304': MOB'#304'L '#304#199#304 +
+        'N D'#304'NAM'#304'K Y'#220'KSEKL'#304'K */'
       
         '       background-color: #121213; overflow-y: auto; overflow-x: ' +
         'hidden;'
@@ -1022,7 +1023,16 @@ object MainForm: TMainForm
       '      MOB'#304'L (RESPONSIVE) KATI KURALLARI'
       '      ========================================= */'
       '   @media (max-width: 768px) {'
-      '       .octaily-container { perspective: none !important; }'
+      
+        '       /* YEN'#304': Mobilde en alttaki kart rahat kays'#305'n diye c'#246'mert' +
+        ' bir bo'#351'luk ekledik */'
+      '       .octaily-container { '
+      '           perspective: none !important; '
+      
+        '           padding-bottom: calc(80px + env(safe-area-inset-botto' +
+        'm)) !important; '
+      '       }'
+      '       '
       '       .octaily-viewport {'
       '           padding-top: env(safe-area-inset-top);'
       '           padding-bottom: env(safe-area-inset-bottom);'
@@ -1078,7 +1088,7 @@ object MainForm: TMainForm
       '           max-height: none !important;'
       '           transform: rotateY(180deg) !important; '
       '           '
-      '           /* A'#350'A'#286'IDAK'#304' SATIRDA z-index DE'#286'ER'#304'N'#304' 10500 YAPTIK */'
+      '           /* Z-INDEX 10500 OLARAK KORUNDU */'
       '           z-index: 10500 !important; '
       '           '
       '           border-radius: 16px !important;'

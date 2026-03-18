@@ -17,9 +17,7 @@ type
       Params: TUniStrings);
     procedure UniTimer1Timer(Sender: TObject);
   private
-    { Private declarations }
   public
-    { Public declarations }
   end;
 
 function NERDLE_FORM: TNERDLE_FORM;
@@ -44,45 +42,116 @@ var
   Response: IHTTPResponse;
   JSONRes: TJSONObject;
   LGuess: string;
-  // GameOver Değişkenleri
   LTime, LTries: Integer;
-  LGrade, LGameType, Prefix: string;
+  LGrade, LGameType, Prefix, LPayload: string;
   LIsWin: Boolean;
   CurrStreak, MaxStreak, TotPlayed, TotWins, Shields: Integer;
 begin
-
   if EventName = 'closePage' then
   begin
     MainForm.Show;
     Self.Close;
+    Exit;
+  end;
+
+  if EventName = 'GetPanelStats' then
+  begin
+    LGameType := Params.Values['game_type'];
+
+    UniMainModule.StatsTable.Close;
+    UniMainModule.StatsTable.SQL.Text :=
+      'SELECT ISNULL(AVG(solve_time_sec), 0) AS avg_time FROM daily_scores ' +
+      'WHERE game_type = :gt AND CAST(puzzle_date AS DATE) = CAST(GETDATE() AS DATE) AND is_win = 1';
+    UniMainModule.StatsTable.ParamByName('gt').AsString := LGameType;
+    UniMainModule.StatsTable.Open;
+    LTime := UniMainModule.StatsTable.FieldByName('avg_time').AsInteger;
+
+    UniMainModule.QueryExec.SQL.Text :=
+      'SELECT solve_time_sec FROM daily_scores ' +
+      'WHERE user_id = :uid AND game_type = :gt AND CAST(puzzle_date AS DATE) = CAST(GETDATE() AS DATE)';
+    UniMainModule.QueryExec.ParamByName('uid').AsInteger := UniMainModule.logged_user_id;
+    UniMainModule.QueryExec.ParamByName('gt').AsString := LGameType;
+    UniMainModule.QueryExec.Open;
+
+    if not UniMainModule.QueryExec.IsEmpty then
+      LTries := UniMainModule.QueryExec.FieldByName('solve_time_sec').AsInteger
+    else
+      LTries := -1;
+    UniMainModule.QueryExec.Close;
+
+    if LTries > -1 then
+    begin
+      UniMainModule.QueryExec.SQL.Text :=
+        'SELECT COUNT(*) AS total_users, ' +
+        'SUM(CASE WHEN solve_time_sec > :mytime THEN 1 ELSE 0 END) AS slower_users ' +
+        'FROM daily_scores WHERE game_type = :gt AND CAST(puzzle_date AS DATE) = CAST(GETDATE() AS DATE) AND is_win = 1';
+      UniMainModule.QueryExec.ParamByName('gt').AsString := LGameType;
+      UniMainModule.QueryExec.ParamByName('mytime').AsInteger := LTries;
+      UniMainModule.QueryExec.Open;
+
+      TotPlayed := UniMainModule.QueryExec.FieldByName('total_users').AsInteger;
+      TotWins := UniMainModule.QueryExec.FieldByName('slower_users').AsInteger;
+
+      if TotPlayed > 1 then
+        CurrStreak := Round((TotWins / (TotPlayed - 1)) * 100)
+      else
+        CurrStreak := 100;
+
+      UniMainModule.QueryExec.Close;
+    end
+    else
+      CurrStreak := 0;
+
+    LPayload := 'GİZLİ';
+    Client := TNetHTTPClient.Create(nil);
+    try
+      try
+        Response := Client.Get('http://hasup.net:9000/api/fetch_answer/' + LGameType + '/' + IntToStr(UniMainModule.logged_user_id) + '?server_key=OCTAILY_GIZLI_ANAHTAR_2026');
+        if Response.StatusCode = 200 then
+        begin
+          JSONRes := TJSONObject.ParseJSONValue(Response.ContentAsString) as TJSONObject;
+          if Assigned(JSONRes) then
+          begin
+            try
+              if JSONRes.GetValue<Boolean>('success') then
+                LPayload := JSONRes.GetValue<string>('answer');
+            finally
+              JSONRes.Free;
+            end;
+          end;
+        end;
+      except
+        LPayload := 'HATA';
+      end;
+    finally
+      Client.Free;
+    end;
+
+    UniSession.AddJS(Format('window.updatePanelStats(%d, %d, "%s");', [LTime, CurrStreak, LPayload]));
+    Exit;
   end;
 
   if EventName = 'SubmitGuess' then
   begin
     LGuess := Params.Values['guess'];
-
     Client := TNetHTTPClient.Create(nil);
+    Client.ContentType := 'application/json';
     PostData := TStringStream.Create(LGuess, TEncoding.UTF8);
     try
       try
-        Response := Client.Post('http://hasup.net:9000/api/guess/nerdle',
-          PostData);
-
+        Response := Client.Post('http://hasup.net:9000/api/guess/nerdle', PostData);
         if Response.StatusCode = 200 then
         begin
-          JSONRes := TJSONObject.ParseJSONValue(Response.ContentAsString)
-            as TJSONObject;
+          JSONRes := TJSONObject.ParseJSONValue(Response.ContentAsString) as TJSONObject;
           if Assigned(JSONRes) then
             try
               if JSONRes.GetValue<Boolean>('success') then
               begin
-                UniSession.AddJS('window.processNerdleResult(' +
-                  JSONRes.GetValue<TJSONArray>('result').ToJSON + ');');
+                UniSession.AddJS('window.processNerdleResult(' + JSONRes.GetValue<TJSONArray>('result').ToJSON + ');');
               end
               else
               begin
-                UniSession.AddJS('window.showNerdleError("' +
-                  JSONRes.GetValue<string>('error') + '");');
+                UniSession.AddJS('window.showNerdleError("' + JSONRes.GetValue<string>('error') + '");');
               end;
             finally
               JSONRes.Free;
@@ -90,13 +159,11 @@ begin
         end
         else
         begin
-          UniSession.AddJS('window.showNerdleError("Sunucu hatası: ' +
-            IntToStr(Response.StatusCode) + '");');
+          UniSession.AddJS('window.showNerdleError("Sunucu hatasi: ' + IntToStr(Response.StatusCode) + '");');
         end;
       except
         on E: Exception do
-          UniSession.AddJS('window.showNerdleError("Sunucu bağlantı hatası: ' +
-            E.Message + '");');
+          UniSession.AddJS('window.showNerdleError("Sunucu baglanti hatasi: ' + E.Message + '");');
       end;
     finally
       PostData.Free;
@@ -104,18 +171,33 @@ begin
     end;
   end;
 
-  // 3. Oyun Sonu Kaydı (Veritabanı Entegrasyonu)
   if EventName = 'GameOver' then
   begin
     LTime := StrToIntDef(Params.Values['time'], 0);
     LTries := StrToIntDef(Params.Values['tries'], 0);
     LGrade := Params.Values['grade'];
     LIsWin := Params.Values['isWin'] = '1';
-    LGameType := Params.Values['game_type']; // 'nerdle' gelecek
+    LGameType := Params.Values['game_type'];
+    Prefix := 'nrd';
 
-    Prefix := 'nrd'; // Nerdle ana menü badge prefixi
+    try
+      UniMainModule.QueryExec.SQL.Text := 'DELETE FROM daily_scores WHERE user_id = :uid AND game_type = :gt AND CAST(puzzle_date AS DATE) = CAST(GETDATE() AS DATE)';
+      UniMainModule.QueryExec.ParamByName('uid').AsInteger := UniMainModule.logged_user_id;
+      UniMainModule.QueryExec.ParamByName('gt').AsString := LGameType;
+      UniMainModule.QueryExec.ExecSQL;
 
-    // Veritabanından mevcut statları çek
+      UniMainModule.QueryExec.SQL.Text :=
+        'INSERT INTO daily_scores (user_id, game_type, puzzle_date, is_win, solve_time_sec, tries, played_at) ' +
+        'VALUES (:uid, :gt, CAST(GETDATE() AS DATE), :win, :time, :tries, GETDATE())';
+      UniMainModule.QueryExec.ParamByName('uid').AsInteger := UniMainModule.logged_user_id;
+      UniMainModule.QueryExec.ParamByName('gt').AsString := LGameType;
+      UniMainModule.QueryExec.ParamByName('win').AsBoolean := LIsWin;
+      UniMainModule.QueryExec.ParamByName('time').AsInteger := LTime;
+      UniMainModule.QueryExec.ParamByName('tries').AsInteger := LTries;
+      UniMainModule.QueryExec.ExecSQL;
+    except
+    end;
+
     UniMainModule.StatsTable.Close;
     UniMainModule.StatsTable.SQL.Text :=
       'SELECT current_streak, max_streak, total_played, total_wins, streak_shields '
@@ -126,7 +208,6 @@ begin
 
     if UniMainModule.StatsTable.IsEmpty then
     begin
-      // --- İLK DEFA OYNUYOR (INSERT) ---
       TotPlayed := 1;
       Shields := 0;
 
@@ -145,12 +226,11 @@ begin
 
       UniMainModule.StatsExec.SQL.Text := 'INSERT INTO user_game_stats ' +
         '(user_id, game_type, current_streak, max_streak, last_played_date, total_played, total_wins, streak_shields) '
-        + 'VALUES (:uid, :gt, :cs, :ms, :ld, :tp, :tw, :sh)';
+        + 'VALUES (:uid, :gt, :cs, :ms, GETDATE(), :tp, :tw, :sh)';
       UniMainModule.StatsExec.ParamByName('uid').AsInteger := UniMainModule.logged_user_id;
       UniMainModule.StatsExec.ParamByName('gt').AsString := LGameType;
       UniMainModule.StatsExec.ParamByName('cs').AsInteger := CurrStreak;
       UniMainModule.StatsExec.ParamByName('ms').AsInteger := MaxStreak;
-      UniMainModule.StatsExec.ParamByName('ld').AsDateTime := Now; // DATETIME olarak Now kullanılıyor
       UniMainModule.StatsExec.ParamByName('tp').AsInteger := TotPlayed;
       UniMainModule.StatsExec.ParamByName('tw').AsInteger := TotWins;
       UniMainModule.StatsExec.ParamByName('sh').AsInteger := Shields;
@@ -158,7 +238,6 @@ begin
     end
     else
     begin
-      // --- DAHA ÖNCE OYNAMIŞ (UPDATE VE KALKAN MANTIĞI) ---
       CurrStreak := UniMainModule.StatsTable.FieldByName('current_streak').AsInteger;
       MaxStreak := UniMainModule.StatsTable.FieldByName('max_streak').AsInteger;
       TotPlayed := UniMainModule.StatsTable.FieldByName('total_played').AsInteger;
@@ -175,7 +254,6 @@ begin
         if CurrStreak > MaxStreak then
           MaxStreak := CurrStreak;
 
-        // Özel Kalkan (Shield) Ödülleri
         if CurrStreak >= 100 then
           Shields := 3
         else if CurrStreak >= 30 then
@@ -183,7 +261,6 @@ begin
       end
       else
       begin
-        // Kaybetme Durumu: Kalkan varsa koru, yoksa sıfırla
         if Shields > 0 then
           Shields := Shields - 1
         else
@@ -192,27 +269,23 @@ begin
 
       UniMainModule.StatsExec.SQL.Text :=
         'UPDATE user_game_stats SET current_streak = :cs, max_streak = :ms, ' +
-        'total_played = :tp, total_wins = :tw, streak_shields = :sh, last_played_date = :ld '
+        'total_played = :tp, total_wins = :tw, streak_shields = :sh, last_played_date = GETDATE() '
         + 'WHERE user_id = :uid AND game_type = :gt';
       UniMainModule.StatsExec.ParamByName('cs').AsInteger := CurrStreak;
       UniMainModule.StatsExec.ParamByName('ms').AsInteger := MaxStreak;
       UniMainModule.StatsExec.ParamByName('tp').AsInteger := TotPlayed;
       UniMainModule.StatsExec.ParamByName('tw').AsInteger := TotWins;
       UniMainModule.StatsExec.ParamByName('sh').AsInteger := Shields;
-      UniMainModule.StatsExec.ParamByName('ld').AsDateTime := Now;
       UniMainModule.StatsExec.ParamByName('uid').AsInteger := UniMainModule.logged_user_id;
       UniMainModule.StatsExec.ParamByName('gt').AsString := LGameType;
       UniMainModule.StatsExec.ExecSQL;
     end;
 
-    // ALTIN VURUŞ: Arka planda Nerdle rozetini (Badge) canlı olarak güncelle!
     if Prefix <> '' then
     begin
       MainForm.UpdateStreakBadge(Prefix, CurrStreak);
     end;
-
   end;
-
 end;
 
 procedure TNERDLE_FORM.UniTimer1Timer(Sender: TObject);
@@ -221,13 +294,60 @@ var
   Response: IHTTPResponse;
   JSONRes: TJSONObject;
   PuzzleID: string;
+  HasPlayedToday: Boolean;
+  LMoves, LTimeSec: Integer;
+  LIsWin: Boolean;
 begin
   UniTimer1.Enabled := False;
+  HasPlayedToday := False;
+  LMoves := 0;
+  LTimeSec := 0;
+  LIsWin := False;
+
+  UniMainModule.StatsTable.Close;
+  UniMainModule.StatsTable.SQL.Text :=
+    'SELECT last_played_date FROM user_game_stats ' +
+    'WHERE user_id = :uid AND game_type = ''nerdle'' ' +
+    'AND CAST(last_played_date AS DATE) = CAST(GETDATE() AS DATE)';
+  UniMainModule.StatsTable.ParamByName('uid').AsInteger := UniMainModule.logged_user_id;
+  UniMainModule.StatsTable.Open;
+
+  if not UniMainModule.StatsTable.IsEmpty then
+    HasPlayedToday := True;
+
+  if HasPlayedToday then
+  begin
+    UniSession.AddJS('window.nerdleGameOver = true;');
+
+    UniMainModule.QueryExec.SQL.Text :=
+      'SELECT tries, solve_time_sec, is_win FROM daily_scores ' +
+      'WHERE user_id = :uid AND game_type = ''nerdle'' ' +
+      'AND CAST(puzzle_date AS DATE) = CAST(GETDATE() AS DATE)';
+    UniMainModule.QueryExec.ParamByName('uid').AsInteger := UniMainModule.logged_user_id;
+    UniMainModule.QueryExec.Open;
+
+    if not UniMainModule.QueryExec.IsEmpty then
+    begin
+      LMoves := UniMainModule.QueryExec.FieldByName('tries').AsInteger;
+      LTimeSec := UniMainModule.QueryExec.FieldByName('solve_time_sec').AsInteger;
+      LIsWin := UniMainModule.QueryExec.FieldByName('is_win').AsBoolean;
+      UniSession.AddJS(Format('if(typeof window.showNerdleGameOver === "function") window.showNerdleGameOver(true, %d, %d, %s);', [LMoves, LTimeSec, LowerCase(BoolToStr(LIsWin, True))]));
+    end
+    else
+    begin
+      UniSession.AddJS('if(typeof window.showNerdleGameOver === "function") window.showNerdleGameOver(true, 0, 0, false);');
+    end;
+
+    UniMainModule.QueryExec.Close;
+    UniMainModule.StatsTable.Close;
+    Exit;
+  end;
+
+  UniMainModule.StatsTable.Close;
 
   Client := TNetHTTPClient.Create(nil);
   try
     try
-      // ÖNBELLEK KIRICI (nocache) EKLENDİ
       Response := Client.Get('http://hasup.net:9000/api/game/nerdle?nocache=' + FormatDateTime('yymmddhhnnsszzz', Now));
 
       if Response.StatusCode = 200 then
@@ -242,8 +362,7 @@ begin
               if not JSONRes.TryGetValue<string>('id', PuzzleID) then
                 PuzzleID := '';
 
-              UniSession.AddJS('window.initNerdleWithServer("' +
-                PuzzleID + '");');
+              UniSession.AddJS('window.initNerdleWithServer("' + PuzzleID + '");');
             end
             else
               UniSession.AddJS('window.initNerdleWithServer("");');

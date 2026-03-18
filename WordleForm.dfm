@@ -22,6 +22,8 @@ object WORDLE_FORM: TWORDLE_FORM
     'window.wordleLang = "tr";'
     'window.currentPuzzleId = "";'
     'window.isWordleInitialized = false;'
+    'window.currentUserId = 0;'
+    'window.wordleStartTimeStamp = 0;'
     ''
     'window.getVisibleViewport = function() {'
     '    var vps = document.querySelectorAll('#39'.wordle-viewport'#39');'
@@ -38,46 +40,6 @@ object WORDLE_FORM: TWORDLE_FORM
     
       'window.wordleEls = function(selector) { var vp = window.getVisib' +
       'leViewport(); return vp ? vp.querySelectorAll(selector) : []; };'
-    ''
-    'window.injectOctailyStyles = function() {'
-    '    if (!document.getElementById("octailyGlobalStyle")) {'
-    '        var style = document.createElement("style");'
-    '        style.id = "octailyGlobalStyle";'
-    '        style.innerHTML = '
-    
-      '            ".swal2-container { z-index: 2147483647 !important; ' +
-      '} " +'
-    
-      '            ".oct-popup { background: #121213 !important; border' +
-      ': 1px solid #3a3a3c !important; color: #fff !important; border-r' +
-      'adius: 12px !important; } " +'
-    
-      '            ".oct-title { color: #fff !important; font-weight: 8' +
-      '00 !important; font-size: 1.4rem !important; margin-top: 10px !i' +
-      'mportant; letter-spacing: 1px !important; } " +'
-    
-      '            ".oct-content { color: #818384 !important; font-size' +
-      ': 1.1rem !important; margin-top: 15px !important; line-height: 1' +
-      '.6 !important; } " +'
-    
-      '            ".oct-confirm { background: #538d4e !important; colo' +
-      'r: #fff !important; font-weight: bold !important; padding: 12px ' +
-      '30px !important; border-radius: 6px !important; border: none !im' +
-      'portant; margin: 15px !important; cursor: pointer; font-family: ' +
-      'sans-serif; font-size: 1.1rem !important; } " +'
-    
-      '            ".oct-cancel { background: #3a3a3c !important; color' +
-      ': #fff !important; padding: 12px 25px !important; border-radius:' +
-      ' 6px !important; border: none !important; margin: 10px !importan' +
-      't; cursor: pointer; font-family: sans-serif; } " +'
-    
-      '            ".oct-icon { border: none !important; color: #b59f3b' +
-      ' !important; font-size: 2.5rem !important; display: flex !import' +
-      'ant; align-items: center !important; justify-content: center !im' +
-      'portant; margin: 10px auto !important; }";'
-    '        document.head.appendChild(style);'
-    '    }'
-    '};'
     ''
     'window.renderKeyboard = function(lang) {'
     
@@ -169,34 +131,35 @@ object WORDLE_FORM: TWORDLE_FORM
     '};'
     ''
     'window.initWordleWithServer = function(serverId) {'
-    '    window.wordleGameOver = false;'
-    '    window.wordleRow = 0;'
-    '    window.wordleCol = 0;'
-    '    window.wordleElapsedTime = 0;'
-    '    window.wordleIsWin = false;'
-    '    window.finalGrade = "";'
+    '    if (!window.wordleGameOver) {'
+    '        window.wordleRow = 0;'
+    '        window.wordleCol = 0;'
+    '        window.wordleElapsedTime = 0;'
+    '        window.wordleIsWin = false;'
+    '        window.finalGrade = "";'
+    '    }'
     ''
     '    if (serverId && serverId !== "") {'
     '        window.currentPuzzleId = serverId;'
     '    } else {'
     '        window.currentPuzzleId = window.getTodayStr();'
     '    }'
+    '    '
     '    window.isWordleInitialized = true;'
     '    window.initWordleBoard();'
     '};'
     ''
     'window.initWordleBoard = function() {'
-    '    window.injectOctailyStyles();'
     
       '    var boardEl = window.wordleEl('#39'#wordleBoard'#39') || document.ge' +
       'tElementById('#39'wordleBoard'#39');'
+    '    '
     '    if (!boardEl) { '
     '        setTimeout(window.initWordleBoard, 100); '
     '        return; '
     '    }'
     '    '
     '    boardEl.innerHTML = '#39#39'; '
-    '    '
     
       '    for (var i = 0; i < (window.wordleMaxGuesses * window.wordle' +
       'Length); i++) {'
@@ -205,22 +168,28 @@ object WORDLE_FORM: TWORDLE_FORM
     '        boardEl.appendChild(cell);'
     '    }'
     '    '
-    '    window.renderKeyboard(window.wordleLang);'
-    '    window.loadWordleState();'
+    '    window.setWordleLang(window.wordleLang);'
+    ''
+    '    if (window.wordleGameOver) {'
+    
+      '        setTimeout(function() { window.showWordleGameOver(true);' +
+      ' }, 500);'
+    '    } else {'
+    '        window.startWordleTimer(); '
+    '    }'
     '};'
     ''
     'window.setWordleLang = function(lang) {'
     '    window.wordleLang = lang;'
-    '    var titleEl = window.wordleEl('#39'#wordleTitle'#39');'
+    
+      '    var titleEl = window.wordleEl('#39'#wordleTitle'#39') || document.ge' +
+      'tElementById('#39'wordleTitle'#39');'
     '    if (titleEl) {'
     
       '        titleEl.textContent = (lang === '#39'tr'#39') ? '#39'WORDLE (TR)'#39' : ' +
       #39'WORDLE (EN)'#39';'
     '    }'
     '    window.renderKeyboard(lang);'
-    '    if (window.isWordleInitialized) {'
-    '        window.loadWordleState();'
-    '    }'
     '};'
     ''
     'window.startWordleTimer = function() {'
@@ -230,15 +199,21 @@ object WORDLE_FORM: TWORDLE_FORM
     
       '    if (window.wordleGameOver || !window.isWordleInitialized) re' +
       'turn;'
+    ''
     
-      '    var startTime = Date.now() - (window.wordleElapsedTime * 100' +
-      '0);'
+      '    if (!window.wordleStartTimeStamp || window.wordleStartTimeSt' +
+      'amp === 0) {'
+    
+      '        window.wordleStartTimeStamp = Date.now() - (window.wordl' +
+      'eElapsedTime * 1000);'
+    '    }'
+    ''
     '    var timerEl = window.wordleEl('#39'#wordleTimer'#39'); '
     '    window.wordleTimerInterval = setInterval(function() {'
     
-      '        window.wordleElapsedTime = Math.floor((Date.now() - star' +
-      'tTime) / 1000);'
-    '        '
+      '        window.wordleElapsedTime = Math.floor((Date.now() - wind' +
+      'ow.wordleStartTimeStamp) / 1000);'
+    ''
     '        if (timerEl) {'
     
       '            var m = Math.floor(window.wordleElapsedTime / 60).to' +
@@ -248,161 +223,7 @@ object WORDLE_FORM: TWORDLE_FORM
       'adStart(2, '#39'0'#39');'
     '            timerEl.textContent = m + '#39':'#39' + s;'
     '        }'
-    ''
-    
-      '        if (window.wordleElapsedTime % 5 === 0) window.saveWordl' +
-      'eState();'
-    '    }, 1000);'
-    '};'
-    ''
-    'window.saveWordleState = function() {'
-    
-      '    if (!window.isWordleInitialized || !window.getVisibleViewpor' +
-      't()) return; '
-    '    '
-    '    var state = {'
-    '        puzzleId: window.currentPuzzleId,'
-    '        row: window.wordleRow,'
-    '        col: window.wordleCol,'
-    '        time: window.wordleElapsedTime,'
-    '        completed: window.wordleGameOver,'
-    '        grade: window.finalGrade,'
-    '        isWin: window.wordleIsWin,'
-    '        cells: [],'
-    '        keys: {}'
-    '    };'
-    '    var cells = window.wordleEls('#39'.wordle-cell'#39');'
-    '    for (var i = 0; i < cells.length; i++) {'
-    '        var status = "";'
-    
-      '        if (cells[i].classList.contains('#39'correct'#39')) status = '#39'co' +
-      'rrect'#39';'
-    
-      '        else if (cells[i].classList.contains('#39'present'#39')) status ' +
-      '= '#39'present'#39';'
-    
-      '        else if (cells[i].classList.contains('#39'absent'#39')) status =' +
-      ' '#39'absent'#39';'
-    
-      '        state.cells.push({ text: cells[i].innerText || cells[i].' +
-      'textContent, status: status });'
-    '    }'
-    '    var keys = window.wordleEls('#39'.key'#39');'
-    '    for (var k = 0; k < keys.length; k++) {'
-    '        var keyChar = keys[k].getAttribute('#39'data-key'#39');'
-    '        if (keyChar) {'
-    '            var kStatus = "";'
-    
-      '            if (keys[k].classList.contains('#39'correct'#39')) kStatus =' +
-      ' '#39'correct'#39';'
-    
-      '            else if (keys[k].classList.contains('#39'present'#39')) kSta' +
-      'tus = '#39'present'#39';'
-    
-      '            else if (keys[k].classList.contains('#39'absent'#39')) kStat' +
-      'us = '#39'absent'#39';'
-    '            if (kStatus !== "") state.keys[keyChar] = kStatus;'
-    '        }'
-    '    }'
-    
-      '    localStorage.setItem('#39'octaily_wordle_state_'#39' + window.wordle' +
-      'Lang, JSON.stringify(state));'
-    '};'
-    ''
-    'window.loadWordleState = function() {'
-    '    if (!window.isWordleInitialized) return;'
-    
-      '    var saved = localStorage.getItem('#39'octaily_wordle_state_'#39' + w' +
-      'indow.wordleLang);'
-    '    if (saved) {'
-    '        try {'
-    '            var state = JSON.parse(saved);'
-    '            if (state.puzzleId === window.currentPuzzleId) {'
-    
-      '                window.wordleRow = (state.row !== undefined) ? p' +
-      'arseInt(state.row, 10) : 0;'
-    
-      '                window.wordleCol = (state.col !== undefined) ? p' +
-      'arseInt(state.col, 10) : 0;'
-    
-      '                window.wordleElapsedTime = (state.time !== undef' +
-      'ined) ? parseInt(state.time, 10) : 0;'
-    
-      '                window.wordleGameOver = state.completed || false' +
-      ';'
-    '                window.finalGrade = state.grade || "";'
-    '                window.wordleIsWin = state.isWin || false;'
-    ''
-    '                var cells = window.wordleEls('#39'.wordle-cell'#39');'
-    '                for (var i = 0; i < state.cells.length; i++) {'
-    '                    if (cells[i] && state.cells[i]) {'
-    
-      '                        cells[i].textContent = state.cells[i].te' +
-      'xt;'
-    '                        cells[i].className = '#39'wordle-cell'#39';'
-    
-      '                        if (state.cells[i].text !== '#39#39') cells[i]' +
-      '.classList.add('#39'filled'#39');'
-    
-      '                        if (state.cells[i].status !== '#39#39') cells[' +
-      'i].classList.add(state.cells[i].status);'
-    '                    }'
-    '                }'
-    ''
-    '                var keys = window.wordleEls('#39'.key'#39');'
-    '                for (var k = 0; k < keys.length; k++) {'
-    
-      '                    keys[k].classList.remove('#39'correct'#39', '#39'present' +
-      #39', '#39'absent'#39');'
-    
-      '                    var keyChar = keys[k].getAttribute('#39'data-key' +
-      #39');'
-    '                    if (keyChar && state.keys[keyChar]) {'
-    
-      '                        keys[k].classList.add(state.keys[keyChar' +
-      ']);'
-    '                    }'
-    '                }'
-    ''
-    '                if (window.wordleGameOver) {'
-    
-      '                    setTimeout(function() { window.showWordleGam' +
-      'eOver(true); }, 300);'
-    '                } else {'
-    '                    window.startWordleTimer();'
-    '                }'
-    '            } else {'
-    
-      '                localStorage.removeItem('#39'octaily_wordle_state_'#39' ' +
-      '+ window.wordleLang);'
-    '                window.resetWordleUI();'
-    '            }'
-    '        } catch (e) { window.resetWordleUI(); }'
-    '    } else {'
-    '        window.resetWordleUI();'
-    '    }'
-    '};'
-    ''
-    'window.resetWordleUI = function() {'
-    '    window.wordleRow = 0;'
-    '    window.wordleCol = 0;'
-    '    window.wordleElapsedTime = 0;'
-    '    window.wordleGameOver = false;'
-    '    window.finalGrade = "";'
-    '    window.wordleIsWin = false;'
-    '    '
-    '    var cells = window.wordleEls('#39'.wordle-cell'#39');'
-    '    for (var i = 0; i < cells.length; i++) {'
-    '        cells[i].textContent = '#39#39';'
-    '        cells[i].className = '#39'wordle-cell'#39';'
-    '    }'
-    '    var keys = window.wordleEls('#39'.key'#39');'
-    '    for (var k = 0; k < keys.length; k++) {'
-    
-      '        keys[k].classList.remove('#39'correct'#39', '#39'present'#39', '#39'absent'#39')' +
-      ';'
-    '    }'
-    '    window.startWordleTimer();'
+    '    }, 1000); '
     '};'
     ''
     'window.calculateGrade = function(tries, isWin) {'
@@ -415,16 +236,25 @@ object WORDLE_FORM: TWORDLE_FORM
     '    return '#39'D'#39';'
     '};'
     ''
-    'window.showWordleGameOver = function(isReplay) {'
+    
+      'window.showWordleGameOver = function(isReplay, savedTries, saved' +
+      'Time, savedIsWin) {'
     
       '    if (window.wordleTimerInterval) clearInterval(window.wordleT' +
       'imerInterval);'
-    '    var time = window.wordleElapsedTime;'
-    '    var tries = window.wordleRow;'
-    '    var isWin = window.wordleIsWin;'
+    '    '
     
-      '    var grade = isReplay ? window.finalGrade : window.calculateG' +
-      'rade(tries, isWin);'
+      '    var time = (isReplay && savedTime !== undefined) ? savedTime' +
+      ' : window.wordleElapsedTime;'
+    
+      '    var tries = (isReplay && savedTries !== undefined) ? savedTr' +
+      'ies : window.wordleRow;'
+    
+      '    var isWin = (isReplay && savedIsWin !== undefined) ? savedIs' +
+      'Win : window.wordleIsWin; '
+    '    '
+    '    var grade = window.calculateGrade(tries, isWin);'
+    ''
     '    var m = Math.floor(time / 60).toString().padStart(2, '#39'0'#39');'
     '    var s = (time % 60).toString().padStart(2, '#39'0'#39');'
     '    var timeStr = m + '#39':'#39' + s;'
@@ -432,7 +262,6 @@ object WORDLE_FORM: TWORDLE_FORM
     '    if (!isReplay) {'
     '        window.wordleGameOver = true;'
     '        window.finalGrade = grade;'
-    '        window.saveWordleState();'
     ''
     '        if (typeof ajaxRequest !== '#39'undefined'#39') {'
     '            ajaxRequest(WORDLE_FORM.WordleHTML, '#39'GameOver'#39', ['
@@ -453,72 +282,97 @@ object WORDLE_FORM: TWORDLE_FORM
     
       '    var modalTitle = isReplay ? '#39'G'#220'N'#220'N '#214'ZET'#304#39' : (isWin ? '#39'TEBR'#304'K' +
       'LER!'#39' : '#39'YARIN Y'#304'NE DENE!'#39');'
+    '    '
+    '    document.getElementById('#39'crmTitle'#39').innerText = modalTitle;'
     
-      '    var subText = isReplay ? '#39'<div style="color:#818384; font-si' +
-      'ze:0.95rem; margin-bottom:20px;">Bug'#252'n'#252'n kelimesini zaten '#231#246'zd'#252'n' +
-      '!</div>'#39' : '#39#39';'
+      '    document.getElementById('#39'crmTitle'#39').style.color = isWin ? '#39'#' +
+      'fff'#39' : (isReplay ? '#39'#fff'#39' : '#39'#e74c3c'#39');'
+    '    '
+    '    var subTextEl = document.getElementById('#39'crmSubText'#39');'
+    '    if (isReplay) {'
     
-      '    var modalIcon = isReplay ? '#39'info'#39' : (isWin ? '#39'success'#39' : '#39'er' +
-      'ror'#39');'
-    '    var triesStr = isWin ? tries + '#39'/6'#39' : '#39'X/6'#39';'
-    ''
-    '    var htmlContent = subText +'
-    
-      '        '#39'<div style="display:flex; justify-content:space-around;' +
-      ' align-items:center; margin-top:10px;">'#39' +'
-    '            '#39'<div style="text-align:center;">'#39' +'
-    
-      '                '#39'<div style="font-size:3rem; font-weight:900; co' +
-      'lor:'#39' + gradeColor + '#39';">'#39' + grade + '#39'</div>'#39' +'
-    
-      '                '#39'<div style="font-size:0.9rem; color:#818384; le' +
-      'tter-spacing:1px;">DERECE</div>'#39' +'
-    '            '#39'</div>'#39' +'
-    '            '#39'<div style="text-align:center;">'#39' +'
-    
-      '                '#39'<div style="font-size:2rem; font-weight:bold; c' +
-      'olor:#fff; line-height:3rem;">'#39' + timeStr + '#39'</div>'#39' +'
-    
-      '                '#39'<div style="font-size:0.9rem; color:#818384; le' +
-      'tter-spacing:1px;">S'#220'RE</div>'#39' +'
-    '            '#39'</div>'#39' +'
-    '            '#39'<div style="text-align:center;">'#39' +'
-    
-      '                '#39'<div style="font-size:2rem; font-weight:bold; c' +
-      'olor:#fff; line-height:3rem;">'#39' + triesStr + '#39'</div>'#39' +'
-    
-      '                '#39'<div style="font-size:0.9rem; color:#818384; le' +
-      'tter-spacing:1px;">DENEME</div>'#39' +'
-    '            '#39'</div>'#39' +'
-    '        '#39'</div>'#39';'
-    ''
-    
-      '    var mySwal = (typeof Swal !== '#39'undefined'#39') ? Swal : (window.' +
-      'parent && window.parent.Swal ? window.parent.Swal : null);'
-    '    if (mySwal) {'
-    '        mySwal.fire({'
-    
-      '            target: window.getVisibleViewport() || document.body' +
-      ','
-    '            title: modalTitle,'
-    '            html: htmlContent,'
-    '            icon: modalIcon,'
-    '            confirmButtonText: '#39#199'IK'#39','
-    '            background: '#39'#1a1a1b'#39','
-    '            color: '#39'#ffffff'#39','
-    
-      '            customClass: { popup: '#39'oct-popup'#39', title: '#39'oct-title' +
-      #39', confirmButton: '#39'oct-confirm'#39', icon: '#39'oct-icon'#39' },'
-    '            didOpen: function() {'
-    
-      '                var container = document.querySelector('#39'.swal2-c' +
-      'ontainer'#39');'
-    
-      '                if (container) container.style.zIndex = "2147483' +
-      '647";'
-    '            }'
-    '        }); '
+      '        subTextEl.innerHTML = '#39'Bug'#252'n'#252'n kelimesini zaten '#231#246'zd'#252'n!'#39 +
+      ';'
+    '        subTextEl.style.display = '#39'block'#39';'
+    '    } else {'
+    '        subTextEl.style.display = '#39'none'#39';'
     '    }'
+    ''
+    '    var bigGrade = document.getElementById('#39'crmBigGrade'#39');'
+    '    bigGrade.innerText = grade;'
+    '    bigGrade.style.color = gradeColor;'
+    '    bigGrade.style.textShadow = '#39'0 0 20px '#39' + gradeColor + '#39'60'#39';'
+    '    '
+    '    var divider = document.getElementById('#39'crmDivider'#39');'
+    '    if (divider) {'
+    '        divider.style.backgroundColor = gradeColor;'
+    
+      '        divider.style.boxShadow = '#39'0 0 12px '#39' + gradeColor + '#39'80' +
+      #39';'
+    '    }'
+    ''
+    '    document.getElementById('#39'crmTime'#39').innerText = timeStr;'
+    
+      '    document.getElementById('#39'crmTries'#39').innerText = isWin ? trie' +
+      's + '#39'/6'#39' : '#39'X/6'#39';'
+    
+      '    if (isReplay && tries === 0 && !isWin) document.getElementBy' +
+      'Id('#39'crmTries'#39').innerText = '#39'-/6'#39';'
+    ''
+    
+      '    document.getElementById('#39'crmAvgTime'#39').innerHTML = '#39'<i class=' +
+      '"fa-solid fa-spinner fa-spin"></i>'#39';'
+    
+      '    document.getElementById('#39'crmPercentile'#39').innerHTML = '#39'<i cla' +
+      'ss="fa-solid fa-spinner fa-spin"></i>'#39';'
+    
+      '    document.getElementById('#39'crmAnswerText'#39').innerHTML = '#39'<i cla' +
+      'ss="fa-solid fa-spinner fa-spin"></i>'#39';'
+    ''
+    
+      '    document.getElementById('#39'customResultModal'#39').classList.add('#39 +
+      'active'#39');'
+    ''
+    '    setTimeout(function() {'
+    '        if (typeof ajaxRequest !== '#39'undefined'#39') {'
+    
+      '            ajaxRequest(WORDLE_FORM.WordleHTML, '#39'GetPanelStats'#39',' +
+      ' ['#39'game_type=wordle_'#39' + window.wordleLang]);'
+    '        }'
+    '    }, isReplay ? 0 : 400);'
+    '};'
+    ''
+    
+      'window.updatePanelStats = function(avgTimeSec, percentile, answe' +
+      'rText) {'
+    
+      '    var m = Math.floor(avgTimeSec / 60).toString().padStart(2, '#39 +
+      '0'#39');'
+    '    var s = (avgTimeSec % 60).toString().padStart(2, '#39'0'#39');'
+    
+      '    document.getElementById('#39'crmAvgTime'#39').innerText = (avgTimeSe' +
+      'c > 0) ? (m + '#39':'#39' + s) : '#39'--:--'#39';'
+    
+      '    document.getElementById('#39'crmPercentile'#39').innerText = '#39'%'#39' + p' +
+      'ercentile;'
+    '    '
+    '    if (answerText) {'
+    
+      '        document.getElementById('#39'crmAnswerText'#39').innerText = ans' +
+      'werText;'
+    '    } else {'
+    
+      '        document.getElementById('#39'crmAnswerText'#39').innerText = "G'#304 +
+      'ZL'#304'";'
+    '    }'
+    '};'
+    ''
+    'window.closeResultModal = function() {'
+    '    var modal = document.getElementById('#39'customResultModal'#39');'
+    '    if(modal) modal.classList.remove('#39'active'#39');'
+    
+      '    if (typeof ajaxRequest !== '#39'undefined'#39') ajaxRequest(WORDLE_F' +
+      'ORM.WordleHTML, '#39'closePage'#39');'
     '};'
     ''
     'window.isLetter = function(str) { '
@@ -551,7 +405,6 @@ object WORDLE_FORM: TWORDLE_FORM
     '            cell.textContent = letter.toUpperCase();'
     '            cell.classList.add('#39'filled'#39');'
     '            window.wordleCol++;'
-    '            window.saveWordleState();'
     '        }'
     '    }'
     '};'
@@ -568,7 +421,6 @@ object WORDLE_FORM: TWORDLE_FORM
     '        if (cell) {'
     '            cell.textContent = '#39#39';'
     '            cell.classList.remove('#39'filled'#39', '#39'error'#39', '#39'shake'#39');'
-    '            window.saveWordleState();'
     '        }'
     '    }'
     '};'
@@ -594,12 +446,12 @@ object WORDLE_FORM: TWORDLE_FORM
     '        var c = window.getCell(window.wordleRow, j);'
     '        if (c) guess += c.textContent || c.innerText;'
     '    }'
-    '    '
-    '    if (typeof ajaxRequest !== '#39'undefined'#39') {'
+    '   '
+    '   if (typeof ajaxRequest !== '#39'undefined'#39') {'
     
-      '        ajaxRequest(WORDLE_FORM.WordleHTML, '#39'SubmitGuess'#39', ['#39'gue' +
-      'ss='#39' + guess]);'
-    '    }'
+      '      ajaxRequest(WORDLE_FORM.WordleHTML, '#39'SubmitGuess'#39', ['#39'guess' +
+      '='#39' + guess]);'
+    '   }'
     '};'
     ''
     'window.handleInput = function(key) {'
@@ -655,7 +507,6 @@ object WORDLE_FORM: TWORDLE_FORM
     '    window.wordleRow++;'
     '    window.wordleCol = 0;'
     '    window.wordleIsWin = isWin;'
-    '    window.saveWordleState();'
     ''
     '    if (isWin || window.wordleRow >= window.wordleMaxGuesses) {'
     
@@ -665,20 +516,6 @@ object WORDLE_FORM: TWORDLE_FORM
     '};'
     ''
     'window.showWordleError = function(errorMsg) {'
-    
-      '    var mySwal = (typeof Swal !== '#39'undefined'#39') ? Swal : (window.' +
-      'parent && window.parent.Swal ? window.parent.Swal : null);'
-    '    if (mySwal && errorMsg && errorMsg !== '#39#39') {'
-    '        mySwal.fire({'
-    
-      '            target: window.getVisibleViewport() || document.body' +
-      ', title: '#39'HATA!'#39', text: errorMsg, icon: '#39'warning'#39', toast: true, ' +
-      'position: '#39'top'#39', showConfirmButton: false, timer: 2500, backgrou' +
-      'nd: '#39'#1a1a1b'#39', color: '#39'#ffffff'#39', customClass: { popup: '#39'oct-popu' +
-      'p'#39' }'
-    '        });'
-    '    }'
-    ''
     '    for (var i = 0; i < window.wordleLength; i++) {'
     '        var cell = window.getCell(window.wordleRow, i);'
     '        if (cell) {'
@@ -737,133 +574,75 @@ object WORDLE_FORM: TWORDLE_FORM
     HTML.Strings = (
       '<style>'
       '    /* ========================================='
-      '       S'#304'STEM RESET & SCROLL K'#304'L'#304'D'#304' (iOS & Android)'
+      '       S'#304'STEM RESET & K'#304'L'#304'TLER'
       '       ========================================= */'
       '    html, body {'
-      '        margin: 0 !important;'
-      '        padding: 0 !important;'
-      '        width: 100% !important;'
-      '        height: 100% !important;'
-      '        background-color: #121213 !important;'
-      '        overflow: hidden !important;'
-      '        overscroll-behavior: none !important;'
-      '        touch-action: none !important;'
-      '        -webkit-border-radius: 0 !important;'
-      '        border-radius: 0 !important;'
-      '        -webkit-appearance: none !important;'
-      '        appearance: none !important;'
+      
+        '        margin: 0 !important; padding: 0 !important; width: 100%' +
+        ' !important; height: 100% !important;'
+      
+        '        background-color: #121213 !important; overflow: hidden !' +
+        'important; overscroll-behavior: none !important; touch-action: n' +
+        'one !important;'
+      
+        '        -webkit-border-radius: 0 !important; border-radius: 0 !i' +
+        'mportant; -webkit-appearance: none !important; appearance: none ' +
+        '!important;'
+      '    }'
+      ''
+      '    .wordle-viewport {'
+      
+        '        position: fixed; top: 0; left: 0; right: 0; bottom: 0; w' +
+        'idth: 100vw; height: 100vh; height: 100dvh;'
+      
+        '        background-color: #121213 !important; display: flex; fle' +
+        'x-direction: column; align-items: center;'
+      
+        '        font-family: '#39'Segoe UI'#39', Tahoma, Geneva, Verdana, sans-s' +
+        'erif; color: #ffffff; z-index: 9999; overflow: hidden;'
+      
+        '        padding-top: env(safe-area-inset-top); padding-bottom: e' +
+        'nv(safe-area-inset-bottom); box-sizing: border-box;'
+      '        box-shadow: 0 0 0 100vmax #121213; clip-path: inset(0);'
       '    }'
       ''
       '    /* ========================================='
-      '       GENEL TASARIM VE V'#304'EWPORT'
+      '       OYUN EKRANI CSS'#39'LER'#304
       '       ========================================= */'
-      '    .wordle-viewport {'
-      '        position: fixed;'
-      '        top: 0;'
-      '        left: 0;'
-      '        right: 0; '
-      '        bottom: 0;'
-      '        width: 100vw;'
-      '        height: 100vh;'
-      '        height: 100dvh;'
-      '        background-color: #121213 !important;'
-      '        display: flex;'
-      '        flex-direction: column;'
-      '        align-items: center;'
       
-        '        font-family: '#39'Segoe UI'#39', Tahoma, Geneva, Verdana, sans-s' +
-        'erif;'
-      '        color: #ffffff;'
-      '        z-index: 9999;'
-      '        overflow: hidden;'
-      '        padding-top: env(safe-area-inset-top);'
-      '        padding-bottom: env(safe-area-inset-bottom);'
-      '        box-sizing: border-box;'
-      '        overscroll-behavior: none;'
-      '        touch-action: none;'
-      '        -webkit-border-radius: 0 !important;'
-      '        border-radius: 0 !important;'
-      '        '
-      '        /* iOS GR'#304' K'#214#350'E SIZINTISI '#304#199#304'N KES'#304'N '#199#214'Z'#220'MLER */'
-      '        box-shadow: 0 0 0 100vmax #121213; '
-      '        clip-path: inset(0); '
-      '    }'
-      ''
-      '    .wordle-header {'
-      '        width: 100%;'
-      '        max-width: 500px;'
-      '        display: flex;'
-      '        justify-content: space-between;'
-      '        align-items: center;'
-      '        padding: 10px 15px;'
-      '        border-bottom: 1px solid #3a3a3c;'
-      '        box-sizing: border-box;'
+        '    .wordle-header { width: 100%; max-width: 500px; display: fle' +
+        'x; justify-content: space-between; align-items: center; padding:' +
+        ' 10px 15px; border-bottom: 1px solid #3a3a3c; box-sizing: border' +
+        '-box; background-color: #121213; }'
       
-        '        background-color: #121213; /* '#350'effafl'#305'k s'#305'z'#305'nt'#305's'#305'n'#305' '#246'nle' +
-        'r */'
-      '    }'
-      ''
-      '    .wordle-header h1 {'
-      '        margin: 0;'
-      '        font-size: 1.5rem;'
-      '        letter-spacing: 2px;'
-      '        font-weight: 800;'
-      '        text-align: center;'
-      '    }'
-      ''
-      '    .btn-back {'
-      '        background: none;'
-      '        border: none;'
-      '        color: #818384;'
-      '        font-size: 1.3rem;'
-      '        cursor: pointer;'
-      '        transition: color 0.2s;'
-      '        padding: 5px;'
-      '    }'
-      ''
-      '    .header-spacer {'
-      '        width: 30px;'
-      '    }'
-      ''
-      '    .wordle-board-container {'
-      '        flex-grow: 1; '
-      '        display: flex;'
-      '        justify-content: center;'
-      '        align-items: center;'
-      '        width: 100%;'
-      '        padding: 10px; '
-      '        box-sizing: border-box;'
-      '        min-height: 0;'
-      '        background-color: #121213;'
-      '    }'
-      ''
-      '    .wordle-board {'
-      '        display: grid;'
-      '        grid-template-rows: repeat(6, 1fr);'
-      '        grid-template-columns: repeat(5, 1fr);'
-      '        gap: 6px;'
-      '        width: 100%;'
-      '        max-width: 340px; '
-      '        aspect-ratio: 5 / 6; '
-      '    }'
-      ''
-      '    .wordle-cell {'
-      '        width: 100%;'
-      '        height: 100%;'
-      '        border: 2px solid #3a3a3c;'
-      '        display: flex;'
-      '        justify-content: center;'
-      '        align-items: center;'
-      '        font-size: 2rem;'
-      '        font-weight: bold;'
-      '        text-transform: uppercase;'
-      '        box-sizing: border-box;'
-      '        user-select: none;'
+        '    .wordle-header h1 { margin: 0; font-size: 1.5rem; letter-spa' +
+        'cing: 2px; font-weight: 800; text-align: center; }'
       
-        '        transition: transform 0.1s, background-color 0.4s, borde' +
-        'r-color 0.4s;'
-      '    }'
+        '    .btn-back { background: none; border: none; color: #818384; ' +
+        'font-size: 1.3rem; cursor: pointer; transition: color 0.2s; padd' +
+        'ing: 5px; }'
       ''
+      
+        '    .wordle-timer { font-family: '#39'Courier New'#39', Courier, monospa' +
+        'ce; color: #818384; font-size: 1.2rem; font-weight: bold; width:' +
+        ' 60px; text-align: right; }'
+      ''
+      
+        '    .wordle-board-container { flex-grow: 1; display: flex; justi' +
+        'fy-content: center; align-items: center; width: 100%; padding: 1' +
+        '0px; box-sizing: border-box; min-height: 0; background-color: #1' +
+        '21213; }'
+      
+        '    .wordle-board { display: grid; grid-template-rows: repeat(6,' +
+        ' 1fr); grid-template-columns: repeat(5, 1fr); gap: 6px; width: 1' +
+        '00%; max-width: 340px; aspect-ratio: 5 / 6; }'
+      '    '
+      
+        '    .wordle-cell { width: 100%; height: 100%; border: 2px solid ' +
+        '#3a3a3c; display: flex; justify-content: center; align-items: ce' +
+        'nter; font-size: 2rem; font-weight: bold; text-transform: upperc' +
+        'ase; box-sizing: border-box; user-select: none; transition: tran' +
+        'sform 0.1s, background-color 0.4s, border-color 0.4s; }'
       '    .wordle-cell.filled { border-color: #565758; }'
       
         '    .wordle-cell.correct { background-color: #538d4e; border-col' +
@@ -875,197 +654,262 @@ object WORDLE_FORM: TWORDLE_FORM
         '    .wordle-cell.absent { background-color: #3a3a3c; border-colo' +
         'r: #3a3a3c; }'
       ''
-      '    .wordle-keyboard {'
-      '        width: 100%;'
-      '        max-width: 500px;'
-      '        padding: 0 8px 15px 8px;'
-      '        box-sizing: border-box;'
-      '        background-color: #121213;'
-      '    }'
-      ''
-      '    .keyboard-row {'
-      '        display: flex;'
-      '        justify-content: center;'
-      '        width: 100%;'
-      '        margin-bottom: 6px;'
-      '        gap: 4px;'
-      '        box-sizing: border-box;'
-      '    }'
-      ''
-      '    .key {'
-      '        background-color: #818384;'
-      '        color: #ffffff;'
-      '        border: none;'
-      '        border-radius: 4px;'
-      '        height: 48px;'
-      '        font-size: 1rem;'
-      '        font-weight: bold;'
-      '        display: flex;'
-      '        justify-content: center;'
-      '        align-items: center;'
-      '        cursor: pointer;'
-      '        text-transform: uppercase;'
-      '        user-select: none;'
-      '        flex: 1;'
-      '        max-width: 40px;'
       
-        '        transition: background-color 0.1s, transform 0.1s, opaci' +
-        'ty 0.2s;'
+        '    .wordle-keyboard { width: 100%; max-width: 500px; padding: 0' +
+        ' 8px 15px 8px; box-sizing: border-box; background-color: #121213' +
+        '; }'
       
-        '        -webkit-tap-highlight-color: transparent; /* iOS tu'#351' t'#305'k' +
-        'lama grili'#287'ini gizler */'
-      '    }'
-      ''
-      '    .key.wide {'
-      '        flex: 1.5;'
-      '        max-width: 60px;'
-      '        font-size: 0.85rem;'
-      '    }'
-      ''
+        '    .keyboard-row { display: flex; justify-content: center; widt' +
+        'h: 100%; margin-bottom: 6px; gap: 4px; box-sizing: border-box; }'
+      '    '
+      
+        '    .key { background-color: #818384; color: #ffffff; border: no' +
+        'ne; border-radius: 4px; height: 48px; font-size: 1rem; font-weig' +
+        'ht: bold; display: flex; justify-content: center; align-items: c' +
+        'enter; cursor: pointer; text-transform: uppercase; user-select: ' +
+        'none; flex: 1; max-width: 40px; transition: background-color 0.1' +
+        's, transform 0.1s, opacity 0.2s; -webkit-tap-highlight-color: tr' +
+        'ansparent; }'
+      
+        '    .key.wide { flex: 1.5; max-width: 60px; font-size: 0.85rem; ' +
+        '}'
       '    .key:active { transform: scale(0.95); }'
       '    .key.correct { background-color: #538d4e; }'
       '    .key.present { background-color: #b59f3b; }'
       '    .key.absent { background-color: #3a3a3c; }'
       ''
+      '    /* ========================================='
+      '       CUSTOM SONU'#199' PANEL'#304' CSS'#39'LER'#304
+      '       ========================================= */'
+      
+        '    .oct-modal-overlay { position: fixed; top: 0; left: 0; width' +
+        ': 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-' +
+        'filter: blur(8px); display: flex; justify-content: center; align' +
+        '-items: center; z-index: 11000; opacity: 0; visibility: hidden; ' +
+        'transition: opacity 0.3s ease, visibility 0.3s ease; padding: 15' +
+        'px; box-sizing: border-box; }'
+      
+        '    .oct-modal-overlay.active { opacity: 1; visibility: visible;' +
+        ' }'
+      '    '
+      
+        '    .oct-modal-content { background: #161618; width: 100%; max-w' +
+        'idth: 350px; border-radius: 16px; border: 1px solid #333; displa' +
+        'y: flex; flex-direction: column; text-align: center; overflow: h' +
+        'idden; opacity: 0; max-height: 92vh; }'
+      
+        '    .oct-modal-overlay.active .oct-modal-content { animation: sw' +
+        'alPopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }'
+      ''
+      
+        '    .modal-header { padding: 18px 20px; background: #1a1a1c; dis' +
+        'play: flex; justify-content: center; align-items: center; border' +
+        '-bottom: 1px solid #2a2a2c; position: relative; flex-shrink: 0; ' +
+        '}'
+      
+        '    .modal-header h2 { margin: 0; font-size: 1.2rem; color: #fff' +
+        '; font-weight: 800; letter-spacing: 1.5px; text-transform: upper' +
+        'case; }'
+      '    '
+      
+        '    .modal-body { padding: 15px 20px; display: flex; flex-direct' +
+        'ion: column; align-items: center; overflow-y: auto; touch-action' +
+        ': pan-y; -webkit-overflow-scrolling: touch; overscroll-behavior:' +
+        ' contain; flex-grow: 1; }'
+      '    '
+      
+        '    .crm-subtext { color: #818384; font-size: 0.85rem; margin-bo' +
+        'ttom: 12px; display: none; }'
+      '    '
+      '    /* YEN'#304': DA'#304'RES'#304'Z, '#199#304'ZG'#304'L'#304' DERECE ALANI */'
+      
+        '    .crm-grade-section { margin: 5px auto 10px auto; display: fl' +
+        'ex; flex-direction: column; align-items: center; width: 100%; fl' +
+        'ex-shrink: 0; opacity: 0; }'
+      
+        '    .oct-modal-overlay.active .crm-grade-section { animation: gr' +
+        'adeSectionIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s forward' +
+        's; }'
+      ''
+      
+        '    .crm-grade-label { font-size: 0.75rem; color: #818384; font-' +
+        'weight: bold; letter-spacing: 2px; margin-bottom: 2px; text-tran' +
+        'sform: uppercase; }'
+      
+        '    .crm-grade-value { font-size: 4.5rem; font-weight: 900; line' +
+        '-height: 1.1; position: relative; margin-bottom: 12px; transitio' +
+        'n: text-shadow 0.3s ease; }'
+      '    '
+      '    /* NOTA G'#214'RE RENK ALAN AYIRICI '#199#304'ZG'#304' */'
+      
+        '    .crm-divider { width: 100%; height: 2px; border-radius: 2px;' +
+        ' background-color: #3a3a3c; margin-bottom: 20px; opacity: 0; tra' +
+        'nsition: background-color 0.3s ease, box-shadow 0.3s ease; }'
+      
+        '    .oct-modal-overlay.active .crm-divider { animation: fadeIn 0' +
+        '.5s ease 0.4s forwards; }'
+      '    '
+      
+        '    .crm-stats-grid { display: grid; grid-template-columns: 1fr ' +
+        '1fr; gap: 12px; margin-bottom: 18px; width: 100%; }'
+      
+        '    .crm-stat-box { background: #1a1a1c; border: 1px solid #2a2a' +
+        '2c; border-radius: 12px; padding: 12px 5px; display: flex; flex-' +
+        'direction: column; align-items: center; justify-content: center;' +
+        ' }'
+      
+        '    .crm-stat-val { font-size: 1.4rem; font-weight: bold; color:' +
+        ' #fff; margin-bottom: 2px; font-variant-numeric: tabular-nums; l' +
+        'ine-height: 1.2; }'
+      
+        '    .crm-stat-lbl { font-size: 0.7rem; color: #818384; font-weig' +
+        'ht: bold; letter-spacing: 1px; text-transform: uppercase; }'
+      '    '
+      
+        '    .crm-answer-box { background: rgba(83, 141, 78, 0.1); border' +
+        ': 1px dashed #538d4e; border-radius: 12px; padding: 12px; margin' +
+        '-bottom: 20px; width: 100%; box-sizing: border-box; }'
+      
+        '    .crm-answer-lbl { font-size: 0.75rem; color: #538d4e; font-w' +
+        'eight: bold; letter-spacing: 1px; margin-bottom: 4px; }'
+      
+        '    .crm-answer-val { font-size: 1.3rem; color: #fff; font-weigh' +
+        't: 800; text-transform: uppercase; letter-spacing: 1.5px; }'
+      ''
+      
+        '    .modal-save-btn { width: 100%; background: #538d4e; color: #' +
+        'fff; border: none; padding: 16px; border-radius: 12px; font-weig' +
+        'ht: 800; font-size: 1rem; cursor: pointer; transition: 0.3s; fle' +
+        'x-shrink: 0; text-transform: uppercase; letter-spacing: 1px; }'
+      ''
+      '    /* ========================================='
+      '       AN'#304'MASYONLAR'
+      '       ========================================= */'
+      
+        '    @keyframes swalPopIn { 0% { opacity: 0; transform: scale(0.8' +
+        '); } 80% { transform: scale(1.05); opacity: 1; } 100% { transfor' +
+        'm: scale(1); opacity: 1; } }'
+      
+        '    @keyframes gradeSectionIn { 0% { opacity: 0; transform: scal' +
+        'e(0.5) translateY(20px); } 100% { opacity: 1; transform: scale(1' +
+        ') translateY(0); } }'
+      
+        '    @keyframes fadeIn { 0% { opacity: 0; } 100% { opacity: 1; } ' +
+        '}'
       '    @keyframes shake {'
       '        10%, 90% { transform: translate3d(-2px, 0, 0); }'
       '        20%, 80% { transform: translate3d(4px, 0, 0); }'
       '        30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }'
       '        40%, 60% { transform: translate3d(6px, 0, 0); }'
       '    }'
-      '    .shake {'
       
-        '        animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both' +
-        ';'
-      '    }'
-      ''
-      '    @media (hover: hover) and (pointer: fine) {'
-      '        .btn-back:hover { color: #ffffff; }'
-      '        .key:hover { opacity: 0.85; }'
-      '    }'
+        '    .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97)' +
+        ' both; }'
       ''
       '    /* ========================================='
-      '       MOB'#304'L UYUMLULUK KATI KURALLARI'
+      '       MEDIA QUERIES'
       '       ========================================= */'
-      '    @media (max-width: 500px) {'
-      '        .wordle-header { padding: 8px 10px; }'
-      '        .wordle-header h1 { font-size: 1.3rem; }'
-      '        .btn-back { font-size: 1.15rem; }'
-      '        '
-      '        .wordle-board-container { padding: 5px; }'
-      '        .wordle-board { '
-      '            max-width: 340px; '
-      '            gap: 6px; '
-      '            padding: 0 5px; '
-      '            box-sizing: border-box;'
-      '        }'
-      '        .wordle-cell { font-size: 1.9rem; }'
-      '        '
-      '        .wordle-keyboard { '
-      '            padding: 0 4px 10px 4px; '
-      '            max-width: 100vw; '
-      '        }'
-      '        .keyboard-row { '
-      '            gap: 3px; '
-      '            margin-bottom: 5px; '
-      '            width: 100%; '
-      '        }'
-      '        .key { '
-      '            height: 46px; '
-      '            font-size: 0.85rem; '
-      '            max-width: none; '
-      '            flex: 1 1 0; '
-      '            padding: 0;'
-      '            margin: 0;'
-      '        }'
-      '        .key.wide { '
-      '            font-size: 0.75rem; '
-      '            flex: 1.5 1 0; '
-      '        }'
+      '    @media (hover: hover) and (pointer: fine) { '
+      '        .btn-back:hover { color: #ffffff; } '
+      '        .key:hover { opacity: 0.85; } '
+      '        .modal-save-btn:hover { background-color: #467a42; }'
       '    }'
       ''
+      '    @media (max-width: 500px) {'
+      
+        '        .modal-body { justify-content: flex-start; padding-botto' +
+        'm: 10px; }'
+      '        .crm-stats-grid { margin-top: auto; } '
+      '        .oct-modal-content { height: auto; min-height: 450px; }'
+      '        '
+      '        .wordle-header { padding: 8px 10px; }'
+      '        .wordle-header h1 { font-size: 1.3rem; }'
+      '        .wordle-board { max-width: 310px; gap: 5px; }'
+      '        .wordle-cell { font-size: 1.7rem; }'
+      '        .key { height: 44px; font-size: 0.8rem; }'
+      '    }'
+      '    '
       '    @media (max-width: 360px) {'
       '        .wordle-board { max-width: 300px; gap: 4px; }'
       '        .wordle-cell { font-size: 1.6rem; }'
-      '        '
-      '        .keyboard-row { gap: 2px; }'
       '        .key { height: 42px; font-size: 0.75rem; }'
-      '        .key.wide { font-size: 0.65rem; }'
       '    }'
       '</style>'
       ''
       '<div class="wordle-viewport">'
       '    <div class="wordle-header">'
       
-        '        <button class="btn-back" onclick="ajaxRequest(WORDLE_FOR' +
-        'M.WordleHTML, '#39'closePage'#39');"><i class="fa-solid fa-arrow-left"><' +
-        '/i></button>'
+        '        <button class="btn-back" onclick="window.closeResultModa' +
+        'l()"><i class="fa-solid fa-arrow-left"></i></button>'
       '        <h1 id="wordleTitle">WORDLE</h1>'
-      '        <div class="header-spacer"></div>'
+      '        <div id="wordleTimer" class="wordle-timer">00:00</div>'
       '    </div>'
       ''
       '    <div class="wordle-board-container">'
-      '        <div class="wordle-board" id="wordleBoard">'
-      
-        '            <div class="wordle-cell"></div><div class="wordle-ce' +
-        'll"></div><div class="wordle-cell"></div><div class="wordle-cell' +
-        '"></div><div class="wordle-cell"></div>'
-      
-        '            <div class="wordle-cell"></div><div class="wordle-ce' +
-        'll"></div><div class="wordle-cell"></div><div class="wordle-cell' +
-        '"></div><div class="wordle-cell"></div>'
-      
-        '            <div class="wordle-cell"></div><div class="wordle-ce' +
-        'll"></div><div class="wordle-cell"></div><div class="wordle-cell' +
-        '"></div><div class="wordle-cell"></div>'
-      
-        '            <div class="wordle-cell"></div><div class="wordle-ce' +
-        'll"></div><div class="wordle-cell"></div><div class="wordle-cell' +
-        '"></div><div class="wordle-cell"></div>'
-      
-        '            <div class="wordle-cell"></div><div class="wordle-ce' +
-        'll"></div><div class="wordle-cell"></div><div class="wordle-cell' +
-        '"></div><div class="wordle-cell"></div>'
-      
-        '            <div class="wordle-cell"></div><div class="wordle-ce' +
-        'll"></div><div class="wordle-cell"></div><div class="wordle-cell' +
-        '"></div><div class="wordle-cell"></div>'
-      '        </div>'
+      '        <div class="wordle-board" id="wordleBoard"></div>'
       '    </div>'
       ''
-      '    <div class="wordle-keyboard" id="wordleKeyboard">'
-      '        <div class="keyboard-row">'
+      '    <div class="wordle-keyboard" id="wordleKeyboard"></div>'
+      ''
+      '    <div class="oct-modal-overlay" id="customResultModal">'
+      '        <div class="oct-modal-content">'
+      '            <div class="modal-header">'
+      '                <h2 id="crmTitle">TEBR'#304'KLER!</h2>'
+      '            </div>'
+      '            '
+      '            <div class="modal-body">'
+      '                <div id="crmSubText" class="crm-subtext"></div>'
+      '                '
+      '                <div class="crm-grade-section">'
+      '                    <div class="crm-grade-label">DERECE</div>'
       
-        '            <div class="key" data-key="E">E</div><div class="key' +
-        '" data-key="R">R</div><div class="key" data-key="T">T</div><div ' +
-        'class="key" data-key="Y">Y</div><div class="key" data-key="U">U<' +
-        '/div><div class="key" data-key="I">I</div><div class="key" data-' +
-        'key="O">O</div><div class="key" data-key="P">P</div><div class="' +
-        'key" data-key="'#286'">'#286'</div><div class="key" data-key="'#220'">'#220'</div>'
-      '        </div>'
-      '        <div class="keyboard-row">'
+        '                    <div class="crm-grade-value" id="crmBigGrade' +
+        '">S+</div>'
       
-        '            <div class="key" data-key="A">A</div><div class="key' +
-        '" data-key="S">S</div><div class="key" data-key="D">D</div><div ' +
-        'class="key" data-key="F">F</div><div class="key" data-key="G">G<' +
-        '/div><div class="key" data-key="H">H</div><div class="key" data-' +
-        'key="J">J</div><div class="key" data-key="K">K</div><div class="' +
-        'key" data-key="L">L</div><div class="key" data-key="'#350'">'#350'</div><d' +
-        'iv class="key" data-key="'#304'">'#304'</div>'
-      '        </div>'
-      '        <div class="keyboard-row">'
+        '                    <div class="crm-divider" id="crmDivider"></d' +
+        'iv>'
+      '                </div>'
+      ''
+      '                <div class="crm-stats-grid">'
+      '                    <div class="crm-stat-box">'
       
-        '            <div class="key wide" id="keyEnter" data-key="ENTER"' +
-        '>ENTER</div>'
+        '                        <div class="crm-stat-val" id="crmTime">-' +
+        '-:--</div>'
+      '                        <div class="crm-stat-lbl">S'#220'RE</div>'
+      '                    </div>'
+      '                    <div class="crm-stat-box">'
       
-        '            <div class="key" data-key="Z">Z</div><div class="key' +
-        '" data-key="C">C</div><div class="key" data-key="V">V</div><div ' +
-        'class="key" data-key="B">B</div><div class="key" data-key="N">N<' +
-        '/div><div class="key" data-key="M">M</div><div class="key" data-' +
-        'key="'#214'">'#214'</div><div class="key" data-key="'#199'">'#199'</div>'
+        '                        <div class="crm-stat-val" id="crmTries">' +
+        '-</div>'
+      '                        <div class="crm-stat-lbl">DENEME</div>'
+      '                    </div>'
+      '                    <div class="crm-stat-box">'
       
-        '            <div class="key wide" id="keyBackspace" data-key="BA' +
-        'CKSPACE"><i class="fa-solid fa-delete-left"></i></div>'
+        '                        <div class="crm-stat-val" id="crmAvgTime' +
+        '"><i class="fa-solid fa-spinner fa-spin"></i></div>'
+      '                        <div class="crm-stat-lbl">ORTALAMA</div>'
+      '                    </div>'
+      '                    <div class="crm-stat-box">'
+      
+        '                        <div class="crm-stat-val" id="crmPercent' +
+        'ile"><i class="fa-solid fa-spinner fa-spin"></i></div>'
+      '                        <div class="crm-stat-lbl">Y'#220'ZDEL'#304'K</div>'
+      '                    </div>'
+      '                </div>'
+      ''
+      '                <div class="crm-answer-box">'
+      
+        '                    <div class="crm-answer-lbl">G'#220'N'#220'N CEVABI</di' +
+        'v>'
+      
+        '                    <div class="crm-answer-val" id="crmAnswerTex' +
+        't"><i class="fa-solid fa-spinner fa-spin"></i></div>'
+      '                </div>'
+      ''
+      
+        '                <button class="modal-save-btn" onclick="window.c' +
+        'loseResultModal()">KAPAT</button>'
+      '            </div>'
       '        </div>'
       '    </div>'
       '</div>')

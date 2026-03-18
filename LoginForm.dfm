@@ -129,7 +129,26 @@ object LOGIN_FORM: TLOGIN_FORM
     '    });'
     '};'
     ''
+    'window.clearInlineErrors = function() {'
+    '    var errs = document.querySelectorAll('#39'.inline-error'#39');'
+    
+      '    errs.forEach(function(el) { el.style.display = '#39'none'#39'; el.in' +
+      'nerText = '#39#39'; });'
+    '};'
+    ''
+    'window.showInlineError = function(inputId, msg) {'
+    '    var errEl = document.getElementById(inputId + '#39'_err'#39');'
+    '    if (errEl) {'
+    '        errEl.innerText = msg;'
+    '        errEl.style.display = '#39'block'#39';'
+    '    }'
+    '    var inputEl = document.getElementById(inputId);'
+    '    if (inputEl) window.shakeInputs([inputEl]);'
+    '};'
+    ''
     'window.submitAuth = function(mode) {'
+    '    window.clearInlineErrors(); '
+    '    '
     '    var u, p, p2, e, r, c;'
     '    if (mode === "login") {'
     '        u = document.getElementById("l_user");'
@@ -144,17 +163,47 @@ object LOGIN_FORM: TLOGIN_FORM
     '        p  = document.getElementById("r_pass");'
     '        p2 = document.getElementById("r_pass2");'
     '        c  = document.getElementById("r_captcha");'
+    '        '
     
       '        if (!u.value || !e.value || !p.value || !p2.value || !c.' +
-      'value) { window.shakeInputs([u, e, p, p2, c]); return; }'
+      'value) { '
+    '            window.shakeInputs([u, e, p, p2, c]); '
+    '            return; '
+    '        }'
+    ''
+    '        var usernameRegex = /^[a-zA-Z'#287#252#351#305#246#231#286#220#350#304#214#199'0-9_]{3,20}$/;'
+    '        if (!usernameRegex.test(u.value.trim())) {'
     
-      '        if (p.value !== p2.value) { window.showLoginError("'#350'ifre' +
-      'ler uyu'#351'muyor!"); window.shakeInputs([p, p2]); return; }'
+      '            window.showInlineError("r_user", "En az 3 karakter. ' +
+      'Harf, rakam veya _ kullan'#305'n. Bo'#351'luk olamaz.");'
+    '            return;'
+    '        }'
+    ''
+    '        var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;'
+    '        if (!emailRegex.test(e.value.trim())) {'
     
-      '        if (c.value !== window.currentCaptcha) { window.showLogi' +
-      'nError("Do'#287'rulama kodu hatal'#305'!"); window.generateCaptcha(); c.va' +
-      'lue = ""; window.shakeInputs([c]); return; }'
+      '            window.showInlineError("r_email", "L'#252'tfen ge'#231'erli bi' +
+      'r e-posta adresi girin.");'
+    '            return;'
+    '        }'
+    ''
+    '        if (p.value !== p2.value) { '
+    
+      '            window.showInlineError("r_pass2", "'#350'ifreler uyu'#351'muyo' +
+      'r!"); '
+    '            return; '
+    '        }'
+    '        '
+    '        if (c.value !== window.currentCaptcha) { '
+    
+      '            window.showInlineError("r_captcha", "Do'#287'rulama kodu ' +
+      'hatal'#305'!"); '
+    '            window.generateCaptcha(); '
+    '            c.value = ""; '
+    '            return; '
+    '        }'
     '    }'
+    '    '
     '    if (typeof ajaxRequest !== "undefined") {'
     '        ajaxRequest(LOGIN_FORM.LoginHTML, "AuthSubmit", ['
     '            "mode="     + mode,'
@@ -673,6 +722,20 @@ object LOGIN_FORM: TLOGIN_FORM
         '}'
       '   @keyframes spin { 100% { transform: rotate(360deg); } }'
       ''
+      '   .inline-error { '
+      '       color: #e74c3c; '
+      '       font-size: 0.75rem; '
+      '       position: absolute; '
+      '       top: 100%; '
+      '       left: 0; '
+      '       margin-top: 2px; '
+      '       display: none; '
+      '       font-weight: 600; '
+      '       text-align: left;'
+      '       z-index: 10;'
+      '   }'
+      ''
+      ''
       '   /* ========================================='
       '      MOB'#304'L: YUKARIDAN 45PX BO'#350'LUKLA SAB'#304'TLEME'
       '      ========================================= */'
@@ -781,12 +844,14 @@ object LOGIN_FORM: TLOGIN_FORM
       
         '               <input id="r_user" class="login-input reg-item" o' +
         'nkeydown="window.handleKey(event,'#39'register'#39')">'
+      '               <div id="r_user_err" class="inline-error"></div>'
       '            </div>'
       '            <div class="input-group">'
       '               <label>E-Posta</label>'
       
         '               <input id="r_email" class="login-input reg-item" ' +
         'onkeydown="window.handleKey(event,'#39'register'#39')">'
+      '               <div id="r_email_err" class="inline-error"></div>'
       '            </div>'
       '            <div class="input-group">'
       '               <label>'#350'ifre</label>'
@@ -808,6 +873,7 @@ object LOGIN_FORM: TLOGIN_FORM
         '               <i id="r_pass2_icon" class="fa-solid fa-eye-slash' +
         ' toggle-password" onclick="window.togglePassword('#39'r_pass2'#39')"></i' +
         '>'
+      '               <div id="r_pass2_err" class="inline-error"></div>'
       '            </div>'
       '            <div class="input-group">'
       '               <label>Do'#287'rulama Kodu</label>'
@@ -820,6 +886,9 @@ object LOGIN_FORM: TLOGIN_FORM
         '                  <div id="captchaDisplay" class="captcha-displa' +
         'y">000000</div>'
       '               </div>'
+      
+        '               <div id="r_captcha_err" class="inline-error"></di' +
+        'v>'
       '            </div>'
       
         '            <button id="r_submit" class="login-btn reg-item" onc' +
