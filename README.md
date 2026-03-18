@@ -46,6 +46,76 @@ The client is engineered to bypass standard framework limitations, ensuring opti
 
 ---
 
+## Database Integration & Schema
+
+Unlike standard frontend applications, Octaily tightly integrates with a robust relational database (SQL Server) via the UniGUI backend to handle all user state, ensuring a seamless and cheat-proof experience. 
+
+Below is the core database schema powering the platform:
+
+### 1. `users` Table
+The classic user profile and authentication table.
+| Column | Data Type | Description |
+| :--- | :--- | :--- |
+| `id` | `int` | Primary Key |
+| `username` | `nvarchar(50)` | Unique user identifier |
+| `email` | `nvarchar(100)` | User email address |
+| `password_hash` | `nvarchar(255)` | Securely hashed password |
+| `created_at` | `datetime` | Account creation timestamp |
+| `last_login` | `datetime` | Timestamp of the last active session |
+| `is_active` | `bit` | Account status flag |
+
+### 2. `user_tokens` Table
+Manages persistent sessions ("Keep me logged in" feature) using secure, long-lived tokens.
+| Column | Data Type | Description |
+| :--- | :--- | :--- |
+| `id` | `int` | Primary Key |
+| `user_id` | `int` | Foreign Key (`users.id`) |
+| `selector` | `char(12)` | Public token identifier |
+| `token_hash` | `char(64)` | Encrypted validator hash |
+| `expiry_date` | `datetime` | Token expiration timestamp |
+| `created_at` | `datetime` | Token generation timestamp |
+
+### 3. `user_game_stats` Table
+A many-to-many junction mapping users to specific games. Tracks persistent, long-term statistics.
+| Column | Data Type | Description |
+| :--- | :--- | :--- |
+| `id` | `int` | Primary Key |
+| `user_id` | `int` | Foreign Key (`users.id`) |
+| `game_type` | `nvarchar(20)` | e.g., 'wordle_tr', 'sudoku' |
+| `current_streak` | `int` | Active consecutive daily wins |
+| `max_streak` | `int` | All-time highest streak |
+| `last_played_date` | `datetime` | Used to calculate streak continuation |
+| `total_played` | `int` | Total lifetime games started |
+| `total_wins` | `int` | Total lifetime games won |
+| `streak_shields` | `int` | Earned protections against streak loss |
+
+### 4. `daily_scores` Table
+Logs the exact performance of a user for the current day's puzzle. The Anti-Cheat system relies heavily on this table.
+| Column | Data Type | Description |
+| :--- | :--- | :--- |
+| `id` | `int` | Primary Key |
+| `user_id` | `int` | Foreign Key (`users.id`) |
+| `game_type` | `varchar(50)` | e.g., 'hexle', 'zip' |
+| `puzzle_date` | `date` | The specific day of the puzzle |
+| `is_win` | `bit` | Win/Loss condition |
+| `solve_time_sec` | `int` | Time taken to complete the puzzle |
+| `tries` | `int` | Number of guesses/moves used |
+| `played_at` | `datetime` | Exact timestamp of completion |
+
+* **Timezone Integrity (Clock Drift Prevention):** The system completely ignores the client's browser time and the web server's local machine time. All daily puzzle constraints and streak calculations rely strictly on the database engine's native time (e.g., `GETDATE()`). This guarantees that users across different countries experience the exact same "daily reset" without timezone loopholes.
+
+---
+
+## Anti-Cheat & Completion Validation
+
+To maintain the integrity of the platform, the daily puzzle answers are never exposed to the client-side JavaScript before completion. 
+
+* **Server-to-Server Validation:** Once a user completes a puzzle, the UniGUI client securely requests the "Answer of the Day" to display on the custom results panel. 
+* **Completion Protected Endpoint:** The API Service intercepts this request and cross-references the `user_id` with the `daily_scores` table. The API will *only* return the correct daily answer if it confirms the user has a legitimate, completed database record for that specific game on the current day.
+* **Further Details:** For a deeper dive into these secured endpoints and the backend puzzle generation logic, please refer to the [Octaily API Service Repository](https://github.com/yushadev0/octaily-service).
+
+---
+
 ## Supported Game Interfaces
 
 The frontend natively renders custom grids and input mechanisms for 8 daily logic engines:
@@ -75,9 +145,5 @@ The frontend natively renders custom grids and input mechanisms for 8 daily logi
 
 ---
 
-*For backend service setup, please refer to the [Octaily API Service Repository](https://github.com/yushadev0/octaily-service).*
-
----
-
 ## To use the project
-Here is the [link](https://hasup.net/octaily)
+Here is the live project: [Octaily Web Application](https://hasup.net/octaily)
